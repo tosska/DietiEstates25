@@ -6,7 +6,7 @@ import 'dotenv/config.js';  // Legge il file .env e lo rende disponibile in proc
 export const database = new Sequelize(process.env.DB_CONNECTION_URI, {
     dialect: process.env.DIALECT
 });
-console.log("ciao duce");
+
 // Crea i modelli
 createOfferModel(database);
 
