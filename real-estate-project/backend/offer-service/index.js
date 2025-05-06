@@ -1,12 +1,11 @@
+
+/*
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 
 const app = express(); // creates an express application
 const PORT = 3004;
-
-// Register the morgan logging middleware, use the 'dev' format
-app.use(morgan('dev'));
 
 app.use(cors()); 
 
@@ -24,3 +23,31 @@ app.use( (err, req, res, next) => {
 
 
 app.listen(PORT);
+*/
+
+console.log("ciao");
+
+import { Sequelize } from "sequelize";
+import { createOfferModel } from "./models/Offer.js";
+
+import 'dotenv/config.js';  // Legge il file .env e lo rende disponibile in process.env
+
+export const database = new Sequelize(process.env.DB_CONNECTION_URI, {
+    dialect: process.env.DIALECT
+});
+console.log("ciao duce");
+// Crea i modelli
+createOfferModel(database);
+
+// Esporta i modelli
+export const { Offer } = database.models;
+
+
+// Sincronizzazione del database
+database.sync({alter: true})
+    .then(() => {
+        console.log("Database sincronizzato correttamente");
+    })
+    .catch(err => {
+        console.error("Errore nella sincronizzazione del database: " + err.message);
+    });
