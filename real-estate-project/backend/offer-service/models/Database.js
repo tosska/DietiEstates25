@@ -14,8 +14,9 @@ createOfferModel(database);
 export const { Offer } = database.models;
 
 
+
 // Sincronizzazione del database
-database.sync()
+database.sync({alter: true})
     .then(() => {
         console.log("Database sincronizzato correttamente");
     })

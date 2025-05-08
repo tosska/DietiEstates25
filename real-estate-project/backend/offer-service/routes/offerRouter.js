@@ -1,63 +1,38 @@
 import express from "express";
-import { QuizController } from "../controllers/QuizController.js";
-import { enforceAuthentication, ensureUsersModifyOnlyOwnQuizzes } from "../middleware/authorization.js";
+import { OfferController } from "../controllers/OfferController.js";
+import { enforceAuthentication } from "../middleware/authorization.js";
 
 
-export const quizRouter = new express.Router();
+export const offerRouter = new express.Router();
 
-quizRouter.get("/my-quizzes", enforceAuthentication, (req, res, next) => {
-    QuizController.getQuizzesForCurrentUser(req).then(quizItems => {
-      res.json(quizItems)
-    }).catch(err => {
-      next(err);
-    });
-});
 
-quizRouter.get("/all-quizzes", (req, res, next) => {
-  QuizController.getAllQuizzes(req).then(quizItems => {
-    res.json(quizItems)
+offerRouter.get("/offers/history/:idListing", enforceAuthentication, (req, res, next) => {
+  OfferController.getOffersHistory(req).then(offerItems => {
+    res.json(offerItems)
   }).catch(err => {
     next(err);
   });
 });
-  
-quizRouter.post("/my-quizzes", enforceAuthentication, (req, res, next) => {
-    QuizController.saveQuiz(req).then( result => {
-      res.json(result);
-    }).catch(err => {
-      next(err);
-    });
+
+offerRouter.get("/offer/:id", (req, res, next) => {
+  console.log("Ciaone")
+  OfferController.getOfferById(req).then(offerItem => {
+    res.json(offerItem)
+  }).catch(err => {
+    next(err);
+  });
 });
 
-quizRouter.get("/all-quizzes/:quizId", (req, res, next) => {
-  QuizController.findById(req).then( (item) => {
-      if (item)
-          res.json(item);
-      else
-          next({status: 404, message: "Quiz not found"});
-  }).catch( err => {
-      next(err);
-  })
+
+offerRouter.get("/offers/", enforceAuthentication, (req, res, next) => {
+  OfferController.getOffersHistory(req).then(offerItems => {
+    res.json(offerItems)
+  }).catch(err => {
+    next(err);
+  });
 });
 
-quizRouter.delete("/my-quizzes/:quizId", enforceAuthentication, ensureUsersModifyOnlyOwnQuizzes, (req, res, next) => {
-  QuizController.delete(req).then( (item) => {
-      if (item)
-          res.json(item);
-      else
-          next({status: 404, message: "Quiz not found"});
-  }).catch( err => {
-      next(err);
-  })
-});
 
-quizRouter.get("/all-quizzes/:quizId/qrcode", async (req, res, next) => {
-  try {
-    const qrCodeUrl = await QuizController.generateQrCode(req); 
-    res.json({ qrCodeUrl }); 
-  } catch (err) {
-    next(err); 
-  }
-});
+
 
 

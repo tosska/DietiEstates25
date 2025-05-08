@@ -1,8 +1,7 @@
 
-/*
 import express from "express";
-import morgan from "morgan";
 import cors from "cors";
+import { offerRouter } from "./routes/offerRouter.js";
 
 const app = express(); // creates an express application
 const PORT = 3004;
@@ -21,43 +20,15 @@ app.use( (err, req, res, next) => {
     });
 });
 
+app.use(offerRouter);
 
 app.listen(PORT);
-*/
 
 
 
-import { Sequelize } from "sequelize";
-import { createOfferModel } from "./models/Offer.js";
 
-import 'dotenv/config.js';  // Legge il file .env e lo rende disponibile in process.env
 
-export const database = new Sequelize(process.env.DB_CONNECTION_URI, {
-    dialect: process.env.DIALECT
-});
 
-// Crea i modelli
-createOfferModel(database);
 
-// Esporta i modelli
-export const { Offer } = database.models;
 
-const newOffer = await Offer.create({
-    amount: 1000.00,
-    status: 'Pending',
-    offer_Date: new Date(),
-    response_Date: null,
-    counteroffer: false,
-    customer_id: 1,
-    agent_id: 2,
-    listing_id: 3
-});
 
-// Sincronizzazione del database
-database.sync({alter: true})
-    .then(() => {
-        console.log("Database sincronizzato correttamente");
-    })
-    .catch(err => {
-        console.error("Errore nella sincronizzazione del database: " + err.message);
-    });

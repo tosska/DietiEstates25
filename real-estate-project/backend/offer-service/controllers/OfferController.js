@@ -3,6 +3,7 @@ import {Offer} from "../models/Database.js";
 export class OfferController {
 
     static async getOfferById(req){
+        console.log("duce");
         return Offer.findByPk(req.params.id);
     }
 
@@ -47,14 +48,26 @@ export class OfferController {
         }); 
     }
 
+
+    //da rifare
     static async getOffersHistory(req){
         return Offer.findAll({
             where: {
-                customer_id: req.params.customer_id,
-                listing_id: req.params.listing_id,
-                agent_id: req.params.agent_id
+                customer_id: req.customer_id,
+                listing_id: req.listing_id,
+                agent_id: req.agent_id
             },
-            order: [['offer_Date', 'ASC']] // oppure 'DESC' per ordine decrescente
+            order: [['offer_Date', 'ASC']] 
+        })
+    }
+
+    static async getActiveOffersByAgent(req){
+        return Offer.findAll({
+            where: {
+                listing_id: req.listing_id,
+                agent_id: req.agent_id
+            },
+            order: [['offer_Date', 'ASC']] 
         })
     }
 
