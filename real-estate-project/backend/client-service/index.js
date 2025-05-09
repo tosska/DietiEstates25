@@ -2,6 +2,8 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 
+import { customerRouter } from "./routes/customerRouter.js";
+
 const app = express(); // creates an express application
 const PORT = 3002;
 
@@ -22,5 +24,8 @@ app.use( (err, req, res, next) => {
     });
 });
 
+app.use(customerRouter);
 
-app.listen(PORT);
+app.listen(PORT, () => {
+    console.log('Microservizio client-service in ascolto sulla porta 3002');
+  });
