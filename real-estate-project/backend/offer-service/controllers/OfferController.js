@@ -3,12 +3,12 @@ import {Offer} from "../models/Database.js";
 export class OfferController {
 
     static async getOfferById(req){
-        console.log("duce");
         return Offer.findByPk(req.params.id);
     }
 
     static async createOffer(req){
         let offer = Offer.build(req.body);
+        offer.offerDate = new Date();
         return offer.save();
     }
 
@@ -61,11 +61,12 @@ export class OfferController {
         })
     }
 
-    static async getActiveOffersByAgent(req){
+    static async getActiveOffersForListingByAgent(req){
         return Offer.findAll({
             where: {
-                listing_id: req.listing_id,
-                agent_id: req.agent_id
+                listing_id: req.params.listingId,
+                agent_id: req.params.agentId,
+                status: "Pending"
             },
             order: [['offer_Date', 'ASC']] 
         })
