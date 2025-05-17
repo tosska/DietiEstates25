@@ -15,7 +15,7 @@ export const { Offer } = database.models;
 
 
 // Sincronizzazione del database
-database.sync({alter: true})
+database.sync()  //togliere alter: true (comporta rischi e perdita di dati)
     .then(() => {
         console.log("Database sincronizzato correttamente");
     })

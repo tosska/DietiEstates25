@@ -3,7 +3,7 @@ import {Offer} from "../models/Database.js";
 export class OfferController {
 
     static async getOfferById(req){
-        return Offer.findByPk(req.params.id);
+        return Offer.findByPk(req.params.offerId);
     }
 
     static async createOffer(req){
@@ -30,11 +30,11 @@ export class OfferController {
         }); 
     }
 
-    static async deleteOffer(req){
+        static async deleteOffer(req){
         return new Promise(async (resolve, reject) => {
             try {
  
-                let offer = await Offer.findByPk(req.params.id);
+                let offer = await Offer.findByPk(req.params.offerId);
                 if (!offer) {
                     return reject(new Error('Offer not found'));
                 }
@@ -49,26 +49,59 @@ export class OfferController {
     }
 
 
-    //da rifare
-    static async getOffersHistory(req){
+    static async respondToOffer(req){
+        return new Promise(async (resolve, reject) => {
+            try {
+ 
+                let offer = await Offer.findByPk(req.params.offerId);
+                
+                if (!offer) {
+                    return reject(new Error('Offer not found'));
+                }
+
+                if (offer.status!="Pending"){
+                    return reject(new Error('This offer has already been responded to'));
+                }
+
+                const offerResponse = req.body.response; 
+    
+                await Offer.update({status: offerResponse}, {where: {id: offer.id}});
+      
+                resolve(offer);
+            } catch (error) {
+                reject(error);
+            }
+        }); 
+    }
+
+
+    //da migliorare
+    static async getOfferHistoryForListing(req){
+
+        let whereClause={};
+    
+        if(req.userRole=="customer") {
+            whereClause= {listing_id: req.params.listingId,
+                          customer_id: req.userId};
+
+        } else if (req.userRole=="agent"){
+            whereClause= {listing_id: req.params.listingId,
+                          agent_id: req.userId};
+        }
+
         return Offer.findAll({
-            where: {
-                customer_id: req.customer_id,
-                listing_id: req.listing_id,
-                agent_id: req.agent_id
-            },
+            where: whereClause,
             order: [['offer_Date', 'ASC']] 
         })
     }
 
-    static async getActiveOffersForListingByAgent(req){
+    static async getActiveOffersByAgent(req){
         return Offer.findAll({
             where: {
-                listing_id: req.params.listingId,
-                agent_id: req.params.agentId,
+                agent_id: req.userId,
                 status: "Pending"
             },
-            order: [['offer_Date', 'ASC']] 
+            order: [['listing_id', 'ASC'], ['offer_Date', 'ASC']] 
         })
     }
 
