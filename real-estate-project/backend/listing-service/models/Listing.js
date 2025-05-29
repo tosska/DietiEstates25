@@ -16,7 +16,7 @@ export function createListingModel(database) {
             allowNull: false
         },
         listingType: {
-            type: DataTypes.ENUM('Sale', 'Rent'),
+            type: DataTypes.ENUM('Sale', 'Rent'), //fare bool?
             allowNull: false,
         },
         status: {

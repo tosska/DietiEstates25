@@ -68,7 +68,7 @@ export class ListingController {
                 }
     
                 await Listing.destroy({where: {id: listing.id}});
-                await Address.destroy({where: {id: listing.addressId}})
+                await Address.destroy({where: {id: listing.addressId}}) //da valutare se cancellare anche address
       
                 resolve(listing);
             } catch (error) {
@@ -81,8 +81,20 @@ export class ListingController {
     static async closeListing(req){
 
         const listingId=req.params.listingId;
+        const listing = await Listing.findByPk(listingId);
 
-        await Listing.update({status: "Closed"}, {where: {id: listingId}});
+        if(!listing){
+            return new Error('Listing not found');
+        }
+
+        if(listing.status === "Closed"){
+            return new Error('Listing is already closed');
+        }
+
+        listing.status="Closed";
+        listing.save();
+
+        return listing;
 
     }
 
