@@ -1,4 +1,5 @@
 import {Listing, Address, database} from "../models/Database.js";
+import { ListingPublisher } from "../models/ListingPublisher.js";
 
 export class ListingController {
 
@@ -21,11 +22,16 @@ export class ListingController {
         );
 
         await transaction.commit();
+        
+        const createdListing = await Listing.findByPk(listing.id, {include: [Address] });
+
+        ListingPublisher.publishCreated(createdListing);
+
         return listing;
 
     }
 
-    //da rifare
+    //valutare un rectoring
     static async updateListing(req){
         return new Promise(async (resolve, reject) => {
             try {
@@ -50,8 +56,12 @@ export class ListingController {
                 
                 await transaction.commit();
 
+                const editListing = await Listing.findByPk(req.params.listingId, {include: [Address] });
+
+                ListingPublisher.publishUpdated(editListing);
+
                 //aggiustare il ritorno
-                resolve(listing);
+                resolve(editListing);
             } catch (error) {
                 reject(error);
             }
@@ -69,6 +79,8 @@ export class ListingController {
     
                 await Listing.destroy({where: {id: listing.id}});
                 await Address.destroy({where: {id: listing.addressId}}) //da valutare se cancellare anche address
+
+                ListingPublisher.publishDeleted(listing.id);
       
                 resolve(listing);
             } catch (error) {
@@ -93,6 +105,8 @@ export class ListingController {
 
         listing.status="Closed";
         listing.save();
+
+        //mettere comando rabbitMQ
 
         return listing;
 
