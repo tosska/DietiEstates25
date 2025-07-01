@@ -1,6 +1,7 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import { authenticationRouter } from "./routes/authenticationRouter.js";
 
 const app = express(); // creates an express application
 const PORT = 3001;
@@ -22,5 +23,6 @@ app.use( (err, req, res, next) => {
     });
 });
 
+app.use(authenticationRouter);
 
 app.listen(PORT);

@@ -2,6 +2,8 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 
+import { customerRouter } from "./routes/customerRouter.js";
+
 const app = express(); // creates an express application
 const PORT = 3002;
 
@@ -21,6 +23,8 @@ app.use( (err, req, res, next) => {
         description: err.message || "An error occurred"
     });
 });
+
+app.use(customerRouter);
 
 
 app.listen(PORT);
