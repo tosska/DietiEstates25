@@ -1,12 +1,10 @@
+
 import express from "express";
-import morgan from "morgan";
 import cors from "cors";
+import { offerRouter } from "./routes/offerRouter.js";
 
 const app = express(); // creates an express application
 const PORT = 3004;
-
-// Register the morgan logging middleware, use the 'dev' format
-app.use(morgan('dev'));
 
 app.use(cors()); 
 
@@ -22,5 +20,15 @@ app.use( (err, req, res, next) => {
     });
 });
 
+app.use(offerRouter);
 
 app.listen(PORT);
+
+
+
+
+
+
+
+
+
