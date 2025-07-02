@@ -1,17 +1,18 @@
-import express from "express";
+import express, { Request, Response, NextFunction, Router } from "express";
 import { SearchController } from "../controllers/SearchController.js";
-//import { ListingController } from "../controllers/ListingController.js";
 
 
 
-export const searchRouter = new express.Router();
+export const searchRouter: Router = express.Router();
 
 //offerRouter.use(enforceAuthentication);
 
 //goal: recupero offerta
 
-searchRouter.post("/listings/search", (req, res, next) => {
-    SearchController.searchListing(req).then(listingItems => {
+searchRouter.post("/listings/search", (req: Request, res: Response, next: NextFunction) => {
+
+    const body = req.body;
+    SearchController.searchListing(body).then(listingItems => {
       res.json(listingItems);
     }).catch(err => {
       next(err);

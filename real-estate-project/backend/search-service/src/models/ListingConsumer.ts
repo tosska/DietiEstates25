@@ -1,12 +1,14 @@
-import amqp from 'amqplib';
+import amqp, { ChannelModel, Channel, ConsumeMessage } from 'amqplib';
+import {AsyncCallbackListing} from '../types/Listing';
+
 
 export class ListingConsumer {
 
-  static rabbitUrl = 'amqp://localhost';
-  static conn = null;
-  static channel = null;
+  static rabbitUrl : string = 'amqp://localhost'; //mettere in .env?
+  static conn : ChannelModel | null;
+  static channel: Channel;
 
-  static async init() {
+  static async init(): Promise<void>  {
     if (!this.conn) {
       this.conn = await amqp.connect(this.rabbitUrl);
       this.channel = await this.conn.createChannel();
@@ -15,12 +17,12 @@ export class ListingConsumer {
     }
   }
 
-  static async consume(queue, handler) {
+  static async consume(queue: string, handler: AsyncCallbackListing) {
     await this.channel.assertQueue(queue, { durable: true });
 
     console.log(' Ascoltando la coda', queue);
 
-    this.channel.consume(queue, async (msg) => {
+    this.channel.consume(queue, async (msg: ConsumeMessage | null) => {
       if (msg !== null) {
         const data = JSON.parse(msg.content.toString());
         try {
@@ -34,7 +36,7 @@ export class ListingConsumer {
     });
   }
 
-  static async listenAll({ onCreate, onUpdate, onDelete }) {
+  static async listenAll(onCreate: AsyncCallbackListing, onUpdate: AsyncCallbackListing, onDelete: AsyncCallbackListing) {
     if (onCreate) await this.consume('listing_created', onCreate);
     if (onUpdate) await this.consume('listing_updated', onUpdate);
     if (onDelete) await this.consume('listing_deleted', onDelete);
@@ -42,6 +44,6 @@ export class ListingConsumer {
 
   static async close() {
     await this.channel.close();
-    await this.conn.close();
+    await this.conn?.close();
   }
 }
