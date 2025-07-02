@@ -1,14 +1,15 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import { listingRouter } from "./routes/listingRouter.js";
+import { ListingPublisher } from "./models/ListingPublisher.js";
 
 const app = express(); // creates an express application
 const PORT = 3003;
 
-// Register the morgan logging middleware, use the 'dev' format
-app.use(morgan('dev'));
-
 app.use(cors()); 
+
+ListingPublisher.init();
 
 // Parse incoming requests with a JSON payload
 app.use(express.json());
@@ -23,4 +24,5 @@ app.use( (err, req, res, next) => {
 });
 
 
+app.use(listingRouter);
 app.listen(PORT);
