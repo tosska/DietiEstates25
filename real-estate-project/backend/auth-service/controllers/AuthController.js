@@ -38,14 +38,20 @@ export class AuthController {
     }
 
     static async registerCustomer(req, res) {
-        const { email, password } = req.body;
+        console.log('Richiesta registerCustomer:', req.body);
+        const { email, password, name, surname, phone } = req.body;
         if (!email || !password) {
             throw new Error('Email e password sono obbligatori');
+        }
+        const existingCredentials = await Credentials.findOne({ where: { Email: email } });
+        if (existingCredentials) {
+            console.log('Email già registrata:', email);
+            throw new Error('Email già registrata');
         }
 
         const newCredentials = await Credentials.create({
             Email: email,
-            password: password,
+            password: password, // Considera di hashare la password come negli altri metodi
             role: 'customer',
         });
 
@@ -55,18 +61,20 @@ export class AuthController {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                credentialsId: newCredentials.ID, // Aggiunto
+                credentialsId: newCredentials.ID,
                 email: email,
-                password: password,
-                name: req.body.name || 'Nuovo',
-                surname: req.body.surname || 'Cliente',
-                phone: req.body.phone || null,
+                password: password, // Hashare anche qui se customer-service lo richiede
+                name: name || 'Nuovo',
+                surname: surname || 'Cliente',
+                phone: phone || null,
             }),
+            timeout: 10000, // Aggiunto timeout
         });
 
         if (!response.ok) {
             await newCredentials.destroy();
             const errorData = await response.json();
+            console.log('Errore da customer-service:', errorData);
             throw new Error(errorData.message || 'Errore durante la creazione del customer');
         }
 
