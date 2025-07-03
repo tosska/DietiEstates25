@@ -1,6 +1,9 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import { adminRouter } from "./routes/adminRouter.js";
+import { agencyRouter } from "./routes/agencyRouter.js";
+import { agentRouter } from "./routes/agentRouter.js";
 
 const app = express(); // creates an express application
 const PORT = 3000;
@@ -21,6 +24,10 @@ app.use( (err, req, res, next) => {
         description: err.message || "An error occurred"
     });
 });
+
+app.use(adminRouter);
+app.use(agencyRouter);
+app.use(agentRouter);
 
 
 app.listen(PORT);
