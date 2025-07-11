@@ -8,11 +8,6 @@ export function createModel(database) {
             primaryKey: true,
             autoIncrement: true,
         },
-        Email: {
-            type: DataTypes.STRING(255),
-            allowNull: false,
-            unique: true,
-        },
         Manager: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
@@ -22,14 +17,6 @@ export function createModel(database) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        password: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            set(value) {
-            let hash = createHash('sha256');
-            this.setDataValue('password', hash.update(value).digest('hex'));
-            },
-        },
         role: { 
             type: DataTypes.STRING,
             allowNull: false,
@@ -37,7 +24,7 @@ export function createModel(database) {
         },
         CredentialsID: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
             unique: true,
         },
     }, { timestamps: false });

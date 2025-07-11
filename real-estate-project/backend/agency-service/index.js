@@ -5,6 +5,7 @@ import { adminRouter } from "./routes/adminRouter.js";
 import { agencyRouter } from "./routes/agencyRouter.js";
 import { agentRouter } from "./routes/agentRouter.js";
 
+
 const app = express(); // creates an express application
 const PORT = 3000;
 

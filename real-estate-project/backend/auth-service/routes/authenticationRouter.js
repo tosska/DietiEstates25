@@ -49,6 +49,25 @@ export const authenticationRouter = express.Router();
     }
   });
 
+  authenticationRouter.post('/register/manager', async (req, res) => {
+    try {
+      const result = await AuthController.registerManager(req, res);
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(error.message.includes('Solo un Manager') ? 403 : 500).json({ message: error.message });
+    }
+  });
+
+  // Route per la registrazione di un'agenzia
+  authenticationRouter.post('/register/company', async (req, res) => {
+    try {
+      const result = await AuthController.registerCompany(req, res);
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(error.message.includes('Solo un Manager') ? 403 : 500).json({ message: error.message });
+    }
+  });
+
   // Route per la validazione del token 
   authenticationRouter.post('/validate', async (req, res) => {
         try {

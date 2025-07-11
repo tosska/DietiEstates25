@@ -34,22 +34,22 @@ customerRouter.get('/customers/:id', verifyAuth, async (req, res) => {
     }
 });
 
-// Update: Aggiorna un customer (richiede autenticazione)
-customerRouter.put('/customers/:id', verifyAuth, async (req, res) => {
-    try {
-        const result = await CustomerController.updateCustomer(req, res);
-        res.status(200).json(result);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
+// // Update: Aggiorna un customer (richiede autenticazione)
+// customerRouter.put('/customers/:id', verifyAuth, async (req, res) => {
+//     try {
+//         const result = await CustomerController.updateCustomer(req, res);
+//         res.status(200).json(result);
+//     } catch (error) {
+//         res.status(400).json({ message: error.message });
+//     }
+// });
 
-// Delete: Elimina un customer (richiede autenticazione)
-customerRouter.delete('/customers/:id', verifyAuth, async (req, res) => {
-    try {
-        const result = await CustomerController.deleteCustomer(req, res);
-        res.status(200).json(result);
-    } catch (error) {
-        res.status(404).json({ message: error.message });
-    }
-});
+// // Delete: Elimina un customer (richiede autenticazione)
+// customerRouter.delete('/customers/:id', verifyAuth, async (req, res) => {
+//     try {
+//         const result = await CustomerController.deleteCustomer(req, res);
+//         res.status(200).json(result);
+//     } catch (error) {
+//         res.status(404).json({ message: error.message });
+//     }
+// });

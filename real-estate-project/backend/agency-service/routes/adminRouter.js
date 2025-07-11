@@ -13,6 +13,15 @@ adminRouter.post('/admins', async (req, res) => {
     }
 });
 
+adminRouter.post('/manager', async (req, res) => {
+    try {
+        const result = await AdminController.createManager(req, res);
+        res.status(201).json(result);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
 adminRouter.get('/admins/:id', async (req, res) => {
     try {
         const admin = await AdminController.getAdminById(req, res);

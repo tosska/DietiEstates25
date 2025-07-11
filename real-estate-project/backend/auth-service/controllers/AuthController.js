@@ -62,8 +62,6 @@ export class AuthController {
             },
             body: JSON.stringify({
                 credentialsId: newCredentials.ID,
-                email: email,
-                password: password, // Hashare anche qui se customer-service lo richiede
                 name: name || 'Nuovo',
                 surname: surname || 'Cliente',
                 phone: phone || null,
@@ -106,8 +104,6 @@ export class AuthController {
             },
             body: JSON.stringify({
                 credentialsId: newCredentials.ID,
-                email: email,
-                password: password,
                 agencyId: agencyId,
                 creatorAdminId: req.user.userId,
             }),
@@ -164,8 +160,6 @@ export class AuthController {
             },
             body: JSON.stringify({
                 credentialsId: newCredentials.ID,
-                email: email,
-                password: password,
                 agencyId: agencyId || null,
                 manager: req.body.manager || false,
             }),
@@ -178,6 +172,105 @@ export class AuthController {
         }
 
         return { userId: newCredentials.ID, role: 'admin', token: Jwt.sign({ userId: newCredentials.ID, role: 'admin' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
+    }
+
+    static async registerManager(req, res) {
+
+        const { email, password, agencyId } = req.body;
+        if (!email || !password) {
+        throw new Error('Email e password sono obbligatori');
+        }
+
+        const newCredentials = await Credentials.create({
+        Email: email,
+        password: password,
+        role: 'admin', // Ruolo admin per il manager
+        });
+
+        const response = await fetch('http://localhost:3000/manager', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': req.headers.authorization,
+        },
+        body: JSON.stringify({
+            credentialsId: newCredentials.ID,
+            agencyId: agencyId || null,
+            manager: true, // Imposta Manager a true
+        }),
+        });
+
+        if (!response.ok) {
+        await newCredentials.destroy();
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Errore durante la creazione del manager');
+        }
+
+        const token = Jwt.sign({ userId: newCredentials.ID, role: 'admin' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` });
+        return { userId: newCredentials.ID, role: 'admin', token };
+    }
+
+    static async registerCompany(req, res) {
+        const { email, password, phone, description, vatNumber, website, street, city, postalCode, state, unitDetail, longitude, latitude } = req.body;
+
+        try {
+            console.log('Invio richiesta a agency-service:', {
+            email,
+            password,
+            phone,
+            description,
+            vatNumber,
+            website,
+            street,
+            city,
+            postalCode,
+            state,
+            unitDetail,
+            longitude,
+            latitude,
+            });
+
+            const response = await fetch('http://localhost:3000/agency', { // Corretto il percorso a /api/agency/agency
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email,
+                password,
+                phone,
+                description,
+                vatNumber,
+                website,
+                street,
+                city,
+                postalCode,
+                state,
+                unitDetail,
+                longitude,
+                latitude,
+            }),
+            });
+
+            const responseText = await response.clone().text(); // Clona la risposta per il log
+            console.log('Risposta grezza da agency-service:', responseText);
+
+            if (!response.ok) {
+            const errorData = await response.json(); // Elabora il JSON
+            throw new Error(errorData.message || `Errore ${response.status}: ${responseText}`);
+            }
+
+            const result = await response.json();
+            return {
+            message: 'Company and manager registered successfully',
+            agencyId: result.agencyId,
+            adminId: result.adminId,
+            token: result.token,
+            };
+        } catch (error) {
+            console.error('Errore in registerCompany:', error);
+            throw new Error(`Failed to register company: ${error.message}`);
+        }
     }
 
 

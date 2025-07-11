@@ -26,7 +26,7 @@ export function createModel(database) {
         },
         ManagerAdmin_ID: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
         },
         Address_ID: {
             type: DataTypes.INTEGER,

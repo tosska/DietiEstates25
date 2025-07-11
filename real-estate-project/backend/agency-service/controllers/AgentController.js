@@ -2,10 +2,10 @@ import { Agent, Admin, Agency } from '../models/Database.js';
 
 export class AgentController {
     static async createAgent(req, res) {
-        const { credentialsId, email, password, agencyId, creatorAdminId } = req.body;
-        const fields = ['credentialsId', 'email', 'password', 'agencyId', 'creatorAdminId'];
+        const { credentialsId, agencyId, creatorAdminId } = req.body;
+        const fields = ['credentialsId', 'agencyId', 'creatorAdminId'];
         if (!fields.every(field => req.body[field])) {
-            throw new Error('Tutti i campi obbligatori (credentialsId, email, password, agencyId, creatorAdminId) devono essere forniti');
+            throw new Error('Tutti i campi obbligatori (credentialsId, agencyId, creatorAdminId) devono essere forniti');
         }
 
         // Verifica che l'agenzia esista
@@ -22,8 +22,6 @@ export class AgentController {
 
         const agent = await Agent.create({
             CredentialsID: credentialsId,
-            Email: email,
-            password: password,
             Agency_ID: agencyId,
             CreatorAdmin_ID: creatorAdminId,
             role: 'agent',

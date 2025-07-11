@@ -14,7 +14,7 @@ agencyRouter.get('/agencies', async (req, res) => {
 });
 
 // Crea una nuova agenzia
-agencyRouter.post('/agencies', async (req, res) => {
+agencyRouter.post('/agency', async (req, res) => {
     try {
         const result = await AgencyController.createAgency(req, res);
         res.status(201).json(result);
