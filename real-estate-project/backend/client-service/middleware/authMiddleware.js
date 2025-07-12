@@ -1,20 +1,26 @@
 export const verifyAuth = async (req, res, next) => {
     try {
-        const token = req.headers.authorization?.split(' ')[1];
+        const authHeader = req.headers.authorization;
+        console.log('Header Authorization ricevuto nel backend:', authHeader); // Debug
+        const token = authHeader?.split(' ')[1];
         if (!token) {
             return res.status(401).json({ message: 'Token mancante' });
         }
+        console.log('Token estratto per /validate:', token); // Debug
 
         const response = await fetch('http://localhost:3001/validate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Host': 'localhost:3001'
             },
             body: JSON.stringify({ token }),
         });
 
+        console.log('Risposta da /validate - Status:', response.status); // Debug
         if (!response.ok) {
             const errorData = await response.json();
+            console.log('Errore da /validate:', errorData); // Debug
             throw new Error(errorData.message || 'Token non valido');
         }
 
@@ -23,9 +29,8 @@ export const verifyAuth = async (req, res, next) => {
 
         req.user = { userId, role };
 
-        // Autorizza solo admin per tutte le operazioni (i customer saranno gestiti nei controller per PUT/DELETE)
-        if (role !== 'admin') {
-            return res.status(403).json({ message: 'Solo gli admin sono autorizzati a eseguire questa operazione' });
+        if (role !== 'admin' && role !== 'customer') {
+            return res.status(403).json({ message: 'Solo admin o customer sono autorizzati' });
         }
 
         next();
