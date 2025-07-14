@@ -1,4 +1,5 @@
 import express from "express";
+import axios from "axios";
 import { AuthController } from "../controllers/AuthController.js";
 import { enforceAuthentication } from "../middleware/authorization.js";
 
@@ -59,7 +60,7 @@ export const authenticationRouter = express.Router();
   });
 
   // Route per la registrazione di un'agenzia
-  authenticationRouter.post('/register/company', async (req, res) => {
+  authenticationRouter.post('/register/agency', async (req, res) => {
     try {
       const result = await AuthController.registerCompany(req, res);
       res.status(201).json(result);
@@ -83,6 +84,28 @@ export const authenticationRouter = express.Router();
         res.status(400).json({ message: error.message });
         }
   });
+
+// TEMPORANEAMENTE QUI (da considerare microservizio geo-service)
+authenticationRouter.get('/api/geocode', async (req, res) => {
+  const { lat, lon, query } = req.query;
+  try {
+    let url;
+    if (query) {
+      url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=1`;
+    } else if (lat && lon) {
+      url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
+    } else {
+      return res.status(400).json({ error: 'Parametri mancanti' });
+    }
+
+    const response = await axios.get(url);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Errore nella geolocalizzazione' });
+  }
+});
+
+  
 
 
 
