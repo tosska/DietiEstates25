@@ -29,6 +29,26 @@ export const authenticationRouter = express.Router();
       res.status(500).json({ message: `Errore durante la registrazione: ${error.message}` });
     }
   });
+
+  // Route per aggiornare le credenziali
+  authenticationRouter.put('/credentials/:id', enforceAuthentication, async (req, res) => {
+      try {
+          const result = await AuthController.updateCredentials(req, res);
+          res.status(200).json(result);
+      } catch (error) {
+          res.status(500).json({ message: `Errore durante l'aggiornamento delle credenziali: ${error.message}` });
+      }
+  });
+
+  // Route per eliminare le credenziali
+  authenticationRouter.delete('/credentials/:id', enforceAuthentication, async (req, res) => {
+      try {
+          const result = await AuthController.deleteCredentials(req, res);
+          res.status(200).json(result);
+      } catch (error) {
+          res.status(500).json({ message: `Errore durante l'eliminazione delle credenziali: ${error.message}` });
+      }
+  });
   
   // Route per la registrazione di un Agent
   authenticationRouter.post('/register/agent', enforceAuthentication, async (req, res) => {

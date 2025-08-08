@@ -21,6 +21,45 @@ export class AuthController {
         return { userId: credentials.ID, role: credentials.role };
     }
 
+    static async updateCredentials(req, res) {
+        try {
+            const { id } = req.params;
+            const { email, password } = req.body;
+
+            const credentials = await Credentials.findByPk(id);
+            if (!credentials) {
+                return res.status(404).json({ error: 'Credenziali non trovate' });
+            }
+
+            const updateData = {};
+            if (email) updateData.Email = email;
+            if (password) updateData.password = password; // Verrà hashatto dal set hook
+            await credentials.update(updateData);
+
+            return res.status(200).json({ message: 'Credenziali aggiornate con successo' });
+        } catch (error) {
+            console.error('Errore nell\'aggiornamento delle credenziali:', error);
+            return res.status(500).json({ error: 'Errore interno del server' });
+        }
+    }
+
+    static async deleteCredentials(req, res) {
+        try {
+            const { id } = req.params;
+
+            const credentials = await Credentials.findByPk(id);
+            if (!credentials) {
+                return res.status(404).json({ error: 'Credenziali non trovate' });
+            }
+
+            await credentials.destroy();
+            return res.status(200).json({ message: 'Credenziali eliminate con successo' });
+        } catch (error) {
+            console.error('Errore nell\'eliminazione delle credenziali:', error);
+            return res.status(500).json({ error: 'Errore interno del server' });
+        }
+    }
+
     static issueToken(userId, role) {
         return { token: Jwt.sign({ userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
     }
