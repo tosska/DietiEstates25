@@ -44,19 +44,43 @@ export class AuthController {
     }
 
     static async deleteCredentials(req, res) {
+        let responseSent = false;
+
         try {
             const { id } = req.params;
+            const { userId, role } = req.user;
 
+            console.log('Richiesta deleteCredentials - ID:', id, 'User:', { userId, role });
+
+            // Cerca le credenziali
             const credentials = await Credentials.findByPk(id);
             if (!credentials) {
-                return res.status(404).json({ error: 'Credenziali non trovate' });
+                console.log('Credenziali non trovate per ID:', id);
+                res.status(404).json({ message: 'Credenziali non trovate' });
+                responseSent = true;
+                return;
             }
 
+            // Autorizza admin o il proprietario delle credenziali
+            if (role !== 'admin' && parseInt(userId) !== parseInt(id)) {
+                console.log('Autorizzazione fallita per userId:', userId, 'e ID:', id);
+                res.status(403).json({ message: 'Non autorizzato a eliminare queste credenziali' });
+                responseSent = true;
+                return;
+            }
+
+            // Elimina le credenziali
+            console.log('Eliminazione delle credenziali con ID:', id);
             await credentials.destroy();
-            return res.status(200).json({ message: 'Credenziali eliminate con successo' });
+            console.log('Credenziali eliminate con successo');
+
+            res.status(200).json({ message: 'Credenziali eliminate con successo' });
+            responseSent = true;
         } catch (error) {
-            console.error('Errore nell\'eliminazione delle credenziali:', error);
-            return res.status(500).json({ error: 'Errore interno del server' });
+            if (!responseSent) {
+                console.error('Errore nell\'eliminazione delle credenziali:', error);
+                res.status(500).json({ message: `Errore durante l'eliminazione: ${error.message}` });
+            }
         }
     }
 

@@ -118,44 +118,73 @@ export class CustomerController {
     }
 
     static async deleteCustomer(req, res) {
+        let responseSent = false;
+
         try {
             const { id } = req.params; // Questo è CredentialsID
             const { userId, role } = req.user;
+
+            console.log('Richiesta deleteCustomer - ID:', id, 'User:', { userId, role }, 'Header Authorization ricevuto:', req.headers.authorization);
 
             // Cerca il customer usando CredentialsID
             const customer = await Customer.findOne({
                 where: { CredentialsID: id }
             });
             if (!customer) {
-                return res.status(404).json({ error: 'Customer non trovato' });
+                console.log('Customer non trovato per CredentialsID:', id);
+                res.status(404).json({ error: 'Customer non trovato' });
+                responseSent = true;
+                return;
             }
 
-            // Autorizza admin o il customer stesso (usando CredentialsID per il controllo)
+            // Autorizza admin o il customer stesso
             if (role !== 'admin' && parseInt(userId) !== customer.CredentialsID) {
-                return res.status(403).json({ error: 'Non autorizzato a eliminare questo customer' });
+                console.log('Autorizzazione fallita per userId:', userId, 'e CredentialsID:', customer.CredentialsID);
+                res.status(403).json({ error: 'Non autorizzato a eliminare questo customer' });
+                responseSent = true;
+                return;
             }
 
             // Elimina prima le credenziali dal auth-service
-            const authServiceUrl = 'http://localhost:3001/credentials/' + id; // Endpoint di esempio
-            const response = await fetch(authServiceUrl, {
+            const authServiceUrl = 'http://localhost:3001/credentials/' + id;
+            const authToken = req.headers.authorization; // Usa il token ricevuto
+            if (!authToken || !authToken.startsWith('Bearer ')) {
+                console.error('Token mancante o formato errato nel deleteCustomer:', authToken);
+                res.status(401).json({ error: 'Token mancante o formato errato' });
+                responseSent = true;
+                return;
+            }
+
+            console.log('Chiamata DELETE a auth-service:', authServiceUrl, 'con token:', authToken);
+            const fetchResponse = await fetch(authServiceUrl, {
                 method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': authToken // Passa il token originale
                 }
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Errore nella sincronizzazione con auth-service');
+            if (!fetchResponse.ok) {
+                const errorData = await fetchResponse.json().catch(() => ({ error: 'Errore sconosciuto dal auth-service' }));
+                console.error('Errore dal auth-service:', fetchResponse.status, errorData);
+                res.status(fetchResponse.status).json({ error: errorData.error || 'Errore nella sincronizzazione con auth-service' });
+                responseSent = true;
+                return;
             }
+            console.log('Risposta dal auth-service:', await fetchResponse.json());
 
             // Elimina il customer
+            console.log('Eliminazione del customer con CustomerID:', customer.CustomerID);
             await customer.destroy();
+            console.log('Customer eliminato con successo');
 
-            return res.status(200).json({ message: 'Customer eliminato con successo' });
+            res.status(200).json({ message: 'Customer eliminato con successo' });
+            responseSent = true;
         } catch (error) {
-            console.error('Errore nell\'eliminazione del customer:', error);
-            return res.status(500).json({ error: error.message || 'Errore interno del server' });
+            if (!responseSent) {
+                console.error('Errore nell\'eliminazione del customer:', error);
+                res.status(500).json({ error: error.message || 'Errore interno del server' });
+            }
         }
     }
 }

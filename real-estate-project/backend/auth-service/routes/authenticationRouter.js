@@ -42,12 +42,14 @@ export const authenticationRouter = express.Router();
 
   // Route per eliminare le credenziali
   authenticationRouter.delete('/credentials/:id', enforceAuthentication, async (req, res) => {
-      try {
-          const result = await AuthController.deleteCredentials(req, res);
-          res.status(200).json(result);
-      } catch (error) {
-          res.status(500).json({ message: `Errore durante l'eliminazione delle credenziali: ${error.message}` });
-      }
+    try {
+        console.log('Esecuzione DELETE /credentials/:id - ID:', req.params.id);
+        const result = await AuthController.deleteCredentials(req, res);
+        // Non inviare una risposta qui, lasciala al controller
+    } catch (error) {
+        console.error('Errore nella route DELETE /credentials/:id:', error);
+        res.status(500).json({ message: `Errore durante l'eliminazione: ${error.message}` });
+    }
   });
   
   // Route per la registrazione di un Agent
