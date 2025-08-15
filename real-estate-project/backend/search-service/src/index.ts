@@ -71,23 +71,40 @@ async function bootstrap() {
     'listings', 
     'id'
   );
-
+  //probabilmente si dovrebbe fare un singleton
   SearchController.listingSearchEngine = listingSearchEngine;
 
-
   await listingSearchEngine.setFilterableField([
-      'listingType',
-      'status',
-      'numberRooms'
-    ]);
+    'listingType',
+    'status',
+    'numberRooms',
+    'area',
+    'price',
+    'constructionYear',
+    'energyClass',
+    'city',
+    'state',
+    'street',
+    'postalCode',
+    'unitDetail',
+    'longitude',
+    'latitude',
+    'country'
+  ]);
 
-      // Istanzia la coda RabbitMQ per Listing
-  const messageQueue = new MessageQueueRabbit<Listing>('amqp://localhost');
-  await messageQueue.connect();
+  try{
+        // Istanzia la coda RabbitMQ per Listing
+    const messageQueue = new MessageQueueRabbit<Listing>('amqp://localhost');
+    await messageQueue.connect();
+
+    await messageQueue.consume('listing_created', async (listing: Listing) => {
+      console.log('Listing created:', listing);
+      await listingSearchEngine.addItemToIndex(listing);
+    });
+
+  } catch (error) {
+    console.error('Errore durante la connessione a RabbitMQ:', error);
   
-  await messageQueue.consume('listing_created', async (listing) => {
-    console.log('Listing created:', listing);
-    await listingSearchEngine.addItemToIndex(listing);
-  });
+  }
 
 }

@@ -77,7 +77,8 @@ export class MeiliSearchEngine<T extends RecordAny> implements SearchEngine<T> {
     const arrayFiltersString: string[] = [];
 
     filters.forEach(filter => {
-      arrayFiltersString.push(`${filter.field} ${filter.operator} ${JSON.stringify(filter.value)}`);
+      if (typeof filter.value === 'string') {filter.value= `"${filter.value}"`;}
+      arrayFiltersString.push(`${filter.field} ${filter.operator} ${filter.value}`);
     });
     console.log("PROVA")
     console.log(arrayFiltersString);
