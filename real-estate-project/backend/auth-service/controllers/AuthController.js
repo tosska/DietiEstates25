@@ -21,6 +21,69 @@ export class AuthController {
         return { userId: credentials.ID, role: credentials.role };
     }
 
+    static async updateCredentials(req, res) {
+        try {
+            const { id } = req.params;
+            const { email, password } = req.body;
+
+            const credentials = await Credentials.findByPk(id);
+            if (!credentials) {
+                return res.status(404).json({ error: 'Credenziali non trovate' });
+            }
+
+            const updateData = {};
+            if (email) updateData.Email = email;
+            if (password) updateData.password = password; // Verrà hashatto dal set hook
+            await credentials.update(updateData);
+
+            return res.status(200).json({ message: 'Credenziali aggiornate con successo' });
+        } catch (error) {
+            console.error('Errore nell\'aggiornamento delle credenziali:', error);
+            return res.status(500).json({ error: 'Errore interno del server' });
+        }
+    }
+
+    static async deleteCredentials(req, res) {
+        let responseSent = false;
+
+        try {
+            const { id } = req.params;
+            const { userId, role } = req.user;
+
+            console.log('Richiesta deleteCredentials - ID:', id, 'User:', { userId, role });
+
+            // Cerca le credenziali
+            const credentials = await Credentials.findByPk(id);
+            if (!credentials) {
+                console.log('Credenziali non trovate per ID:', id);
+                res.status(404).json({ message: 'Credenziali non trovate' });
+                responseSent = true;
+                return;
+            }
+
+            // Autorizza admin o il proprietario delle credenziali
+            if (role !== 'admin' && parseInt(userId) !== parseInt(id)) {
+                console.log('Autorizzazione fallita per userId:', userId, 'e ID:', id);
+                res.status(403).json({ message: 'Non autorizzato a eliminare queste credenziali' });
+                responseSent = true;
+                return;
+            }
+
+            // Elimina le credenziali
+            console.log('Eliminazione delle credenziali con ID:', id);
+            await credentials.destroy();
+            console.log('Credenziali eliminate con successo');
+
+            res.status(200).json({ message: 'Credenziali eliminate con successo' });
+            responseSent = true;
+        } catch (error) {
+            if (!responseSent) {
+                console.error('Errore nell\'eliminazione delle credenziali:', error);
+                res.status(500).json({ message: `Errore durante l'eliminazione: ${error.message}` });
+            }
+        }
+    }
+
     static issueToken(userId, role) {
         return { token: Jwt.sign({ userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
     }
