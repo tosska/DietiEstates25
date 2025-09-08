@@ -23,9 +23,11 @@ export class ListingController {
 
         await transaction.commit();
         
-        const createdListing = await Listing.findByPk(listing.id, {include: [Address] });
 
-        ListingPublisher.publishCreated(createdListing);
+        //Rimuovo id da address in modo che non crei conflitto sul motore di ricerca (da spostare nel microservizio di ricerca)
+        const {id, ...addressWithoutId} = address.dataValues;
+        const listingToPublish = {...listing.dataValues, ...addressWithoutId}
+        ListingPublisher.publishCreated(listingToPublish);
 
         return listing;
 

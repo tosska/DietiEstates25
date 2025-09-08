@@ -15,11 +15,11 @@ export function createAddressModel(database) {
             type: DataTypes.STRING,
             allowNull: false
         },
-        postalCode: {
+        state: {                    //provincia/stato interno
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: false, 
         },
-        state: {
+        country: {
             type: DataTypes.STRING,
             allowNull: false, 
         },
@@ -27,10 +27,14 @@ export function createAddressModel(database) {
             type: DataTypes.STRING, 
             allowNull: false,
         },
+        postalCode: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
         longitude:{
             type: DataTypes.FLOAT,
             allowNull: true
-        },
+        },    
         latitude:{
             type: DataTypes.FLOAT,
             allowNull: true

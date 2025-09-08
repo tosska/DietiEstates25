@@ -8,7 +8,7 @@ export const listingRouter = new express.Router();
 //offerRouter.use(enforceAuthentication);
 
 //goal: recupero offerta
-listingRouter.get("/listing/:listingId", enforceAuthentication, (req, res, next) => {
+listingRouter.get("/listing/:listingId", (req, res, next) => {
     ListingController.getListingById(req).then(listingItem => {
       res.json(listingItem);
     }).catch(err => {
