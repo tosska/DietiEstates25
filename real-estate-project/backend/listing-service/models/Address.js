@@ -11,6 +11,10 @@ export function createAddressModel(database) {
             type: DataTypes.STRING, 
             allowNull: false
         },
+        houseNumber: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
         city: {
             type: DataTypes.STRING,
             allowNull: false

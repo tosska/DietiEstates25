@@ -11,13 +11,16 @@ export class ListingController {
 
     static async createListing(req){
 
-        const body = req.body;
+        const {address, ...listingData } = req.body;
         const transaction = await database.transaction();
+
+        listingData.publicationDate = new Date();
+        listingData.status = "Active";
         
-        const address = await Address.create(body.address, {transaction});
+        const addressDB = await Address.create(address, {transaction});
         
-        const listing = await Listing.create(
-            {...body.listing, addressId: address.id }, 
+        const listingDB = await Listing.create(
+            {...listingData, addressId: addressDB.id }, 
             { transaction }
         );
 
@@ -25,11 +28,11 @@ export class ListingController {
         
 
         //Rimuovo id da address in modo che non crei conflitto sul motore di ricerca (da spostare nel microservizio di ricerca)
-        const {id, ...addressWithoutId} = address.dataValues;
-        const listingToPublish = {...listing.dataValues, ...addressWithoutId}
+        const {id, ...addressWithoutId} = addressDB.dataValues;
+        const listingToPublish = {...listingDB.dataValues, ...addressWithoutId}
         ListingPublisher.publishCreated(listingToPublish);
 
-        return listing;
+        return listingDB;
 
     }
 
@@ -113,6 +116,8 @@ export class ListingController {
         return listing;
 
     }
+
+    
 
 
    
