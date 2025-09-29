@@ -32,4 +32,15 @@ export class AgentController {
             agentId: agent.AgentID,
         };
     }
+
+
+    static async getAgentId(req) {
+
+        const credential_id = req.params.id;
+
+        return Agent.findOne({
+            where: { CredentialsID: credential_id },
+            attributes: ['AgentID'],
+        });
+    }
 }

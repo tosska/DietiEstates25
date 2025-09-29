@@ -47,7 +47,7 @@ export function createAddressModel(database) {
         indexes: [
             {
                 unique: true,
-                fields: ['street', 'city', 'postalCode', 'state', 'unitDetail']
+                fields: ['street', 'city', 'houseNumber', 'postalCode', 'state', 'unitDetail']
             }
         ]
     })

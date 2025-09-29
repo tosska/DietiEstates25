@@ -1,0 +1,57 @@
+_format_version: "3.0"
+_transform: true
+
+consumers:
+  - username: auth-service
+    keyauth_credentials:
+      - key: dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd  # Usa la stessa chiave segreta definita nel file docker-compose.yml
+
+
+services:
+  - name: auth
+    url: http://host.docker.internal:3001
+    routes:
+      - name: auth-route
+        paths:
+          - /auth-service
+  - name: listing
+    url: http://host.docker.internal:3003
+    routes:
+      - name: listing-route
+        paths:
+          - /listing-service
+  - name: customer
+    url: http://host.docker.internal:3002
+    routes:
+      - name: customer-route
+        paths:
+          - /customer-service
+      - name: customer-internal-route          
+        paths:
+          - /intern   
+        strip_path: false
+        plugins:
+          - name: key-auth  
+  - name: agency
+    url: http://host.docker.internal:3000
+    routes:
+      - name: agency-route
+        paths:
+          - /agency-service
+      - name: agency-internal-route          
+        paths:
+          - /agency-service/intern   
+        plugins:
+          - name: key-auth  
+  - name: search
+    url: http://host.docker.internal:3005
+    routes:
+      - name: search-route
+        paths:
+          - /search-service
+  - name: offer
+    url: http://host.docker.internal:3004
+    routes:
+      - name: offer-route
+        paths:
+          - /offer-service

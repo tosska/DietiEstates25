@@ -11,6 +11,10 @@ export function createOfferModel(database) {
             type: DataTypes.DECIMAL(10, 2), // Valore monetario con 2 decimali
             allowNull: false
         },
+        message: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
         status: {
             type: DataTypes.ENUM('Accepted', 'Rejected', 'Pending'),
             allowNull: false

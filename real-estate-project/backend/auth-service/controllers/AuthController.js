@@ -1,6 +1,8 @@
 import { createHash } from 'crypto';
 import { Credentials } from '../models/Database.js';
+import { AgencyClient } from '../clients/agencyClient.js';
 import Jwt from 'jsonwebtoken';
+import { AuthService } from '../services/AuthService.js';
 
 export class AuthController {
     static async checkCredentials(req) {
@@ -16,10 +18,19 @@ export class AuthController {
 
         if (!credentials) {
             return null;
-        }
+        } 
 
-        return { userId: credentials.ID, role: credentials.role };
+        console.log('Credenziali trovate:', { ID: credentials.ID, role: credentials.role });
+
+        const businessId = await AuthService.getBusinessId(credentials.ID, credentials.role);
+        if(!businessId) {
+            throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
+        }
+        
+        return { userId: businessId, role: credentials.role };
     }
+
+    #getBusiness
 
     static async updateCredentials(req, res) {
         try {

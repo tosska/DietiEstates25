@@ -53,3 +53,12 @@ customerRouter.delete('/customers/:id', verifyAuth, async (req, res) => {
         res.status(404).json({ message: error.message });
     }
 });
+
+customerRouter.get('/intern/customer/:id/businessId', async (req, res) => {
+    try {
+        const customerId = await CustomerController.getCustomerId(req);
+        res.status(200).json(customerId); 
+    } catch (error) {
+        res.status(404).json({ message: error.message });
+    }
+});

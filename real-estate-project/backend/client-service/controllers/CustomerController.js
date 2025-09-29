@@ -18,13 +18,13 @@ export class CustomerController {
 
         return {
             message: 'Customer creato con successo',
-            customerId: customer.CustomerID,
+            customerId: customer.id,
         };
     }
 
     static async getAllCustomers(req, res) {
         const customers = await Customer.findAll({
-            attributes: ['CustomerID', 'CredentialsID', 'Name', 'Surname', 'Phone', 'Registration_Date'], // Aggiunto CredentialsID
+            attributes: ['id', 'CredentialsID', 'Name', 'Surname', 'Phone', 'Registration_Date'], // Aggiunto CredentialsID
         });
         return customers;
     }
@@ -33,7 +33,7 @@ export class CustomerController {
         const { id } = req.params;
         const customer = await Customer.findOne({
             where: { CredentialsID: id },
-            attributes: ['CustomerID', 'CredentialsID', 'Name', 'Surname', 'Phone', 'Registration_Date'], // Aggiunto CredentialsID
+            attributes: ['id', 'CredentialsID', 'Name', 'Surname', 'Phone', 'Registration_Date'], // Aggiunto CredentialsID
         });
         if (!customer) {
             throw new Error('Customer non trovato');
@@ -174,7 +174,7 @@ export class CustomerController {
             console.log('Risposta dal auth-service:', await fetchResponse.json());
 
             // Elimina il customer
-            console.log('Eliminazione del customer con CustomerID:', customer.CustomerID);
+            console.log('Eliminazione del customer con CustomerID:', customer.id);
             await customer.destroy();
             console.log('Customer eliminato con successo');
 
@@ -186,5 +186,21 @@ export class CustomerController {
                 res.status(500).json({ error: error.message || 'Errore interno del server' });
             }
         }
+    }
+
+    static async getCustomerId(req){
+
+        const credentialsId = req.params.id;
+
+        const customerId = await Customer.findOne({
+            where: { CredentialsID: credentialsId },
+            attributes: ['id'],
+        });
+
+        if (!customerId) {
+            throw new Error('Customer not found');
+        }
+
+        return customerId
     }
 }

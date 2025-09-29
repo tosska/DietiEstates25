@@ -8,6 +8,7 @@ export class OfferController {
 
     static async createOffer(req){
         let offer = Offer.build(req.body);
+        offer.status = 'Pending';
         offer.offerDate = new Date();
         return offer.save();
     }

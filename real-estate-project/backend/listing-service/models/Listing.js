@@ -21,10 +21,10 @@ export function createListingModel(database) {
         },
         status: {
             type: DataTypes.ENUM('Active', 'Closed'),
-            allowNull: true, // Può essere nullo se non c'è risposta
+            allowNull: true, 
         },
         publicationDate: {
-            type: DataTypes.DATE, // Eventuale controfferta monetaria
+            type: DataTypes.DATE, 
             allowNull: true,
         },
         endPublicationDate:{

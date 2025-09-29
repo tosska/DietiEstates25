@@ -1,5 +1,6 @@
 import express from "express";
 import morgan from "morgan";
+import path from "path";
 import cors from "cors";
 import { listingRouter } from "./routes/listingRouter.js";
 import { ListingPublisher } from "./models/ListingPublisher.js";
@@ -13,6 +14,8 @@ ListingPublisher.init();
 
 // Parse incoming requests with a JSON payload
 app.use(express.json());
+app.use("/images/active", express.static(path.join(process.cwd(), "images/active"))); //middlware che serve file statici su un certo uri
+
 
 //error handler
 app.use( (err, req, res, next) => {

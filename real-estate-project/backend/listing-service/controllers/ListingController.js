@@ -1,17 +1,29 @@
-import {Listing, Address, database} from "../models/Database.js";
+import {Listing, Address, Photo, database} from "../models/Database.js";
 import { ListingPublisher } from "../models/ListingPublisher.js";
+import { PhotoService } from "../services/PhotoService.js";
 
 export class ListingController {
 
     static async getListingById(req){
-        return Listing.findByPk(req.params.listingId, 
-            {include: [Address] }
-        );
+        const listingId = req.params.listingId;
+        let listing = await Listing.findByPk(listingId, {
+            include: [Address],
+        });
+
+        if(listing){
+            const photos = await PhotoService.getPhotosByListingIdAndSetUrl(listingId);
+            listing.dataValues.Photos = photos;
+            return listing;
+        }
+
+        return new Error('Listing not found');
     }
 
     static async createListing(req){
 
-        const {address, ...listingData } = req.body;
+        const dataParse = JSON.parse(req.body.listingData); 
+        const {address, ...listingData } = dataParse;
+        
         const transaction = await database.transaction();
 
         listingData.publicationDate = new Date();
@@ -24,9 +36,10 @@ export class ListingController {
             { transaction }
         );
 
+        await PhotoService.savePhotos(listingDB.id, req.files);
+
         await transaction.commit();
         
-
         //Rimuovo id da address in modo che non crei conflitto sul motore di ricerca (da spostare nel microservizio di ricerca)
         const {id, ...addressWithoutId} = addressDB.dataValues;
         const listingToPublish = {...listingDB.dataValues, ...addressWithoutId}
@@ -35,6 +48,8 @@ export class ListingController {
         return listingDB;
 
     }
+
+
 
     //valutare un rectoring
     static async updateListing(req){
@@ -115,6 +130,26 @@ export class ListingController {
 
         return listing;
 
+    }
+
+
+    static async getActiveListingsForAgent(req){
+
+        return Listing.findAll({
+            where: { status: 'Active', agentId: req.userId},
+            include: [Address]
+        });
+    }
+
+    static async getLatestListings(req){
+        const limit = parseInt(req.query.limit) || 4; // Numero massimo di annunci da restituire, default 10
+
+        return Listing.findAll({
+            where: { status: 'Active' },
+            include: [Address],
+            order: [['publicationDate', 'DESC']],
+            limit: limit
+        });
     }
 
     

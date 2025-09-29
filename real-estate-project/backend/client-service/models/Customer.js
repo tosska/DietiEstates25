@@ -4,7 +4,7 @@ import { createHash } from "crypto";
 
 export function createModel(database) {
   database.define('Customer', {
-    CustomerID: { 
+    id: { 
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
