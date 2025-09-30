@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 
 export function createModel(database) {
     database.define('Address', {
-        AddressID: { 
+        id: { 
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
