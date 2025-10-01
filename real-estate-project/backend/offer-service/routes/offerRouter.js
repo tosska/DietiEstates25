@@ -57,6 +57,26 @@ offerRouter.put("/offer/:offerId/response", enforceAuthentication, restrictOffer
 });
 
 
+offerRouter.get("/offers/pending/listing/:listingId", enforceAuthentication, (req, res, next) => {
+    OfferController.getAllPendingOffersByListingId(req).then(offerItems => {
+      console.log(offerItems);
+      res.json(offerItems);
+    }).catch(err => {
+      next(err);
+    });
+});
+
+offerRouter.get("/offers/pending/count-by-listing", enforceAuthentication, enforceAuthenticationByAgent, (req, res, next) => {
+
+  OfferController.getCountOfPendingOffersGroupListing(req).then(counts => {
+    console.log(counts);
+    res.json(counts);
+  }).catch(err => {
+    next(err);
+  });
+
+});
+
 
 offerRouter.get("/offers/history/listing/:listingId", enforceAuthentication, (req, res, next) => {
     OfferController.getOfferHistoryForListing(req).then(offerItems => {
@@ -66,6 +86,9 @@ offerRouter.get("/offers/history/listing/:listingId", enforceAuthentication, (re
     });
 });
 
+
+
+
 //da cancellare (test)
 offerRouter.post("/verify-token", (req, res, next) => {
     //Jwt.verify(token, process.env.TOKEN_SECRET, callback);
@@ -74,6 +97,8 @@ offerRouter.post("/verify-token", (req, res, next) => {
     res.json(data);
     //return res.status(401).json({ error: "Invalid token"})
 });
+
+
 
 
 

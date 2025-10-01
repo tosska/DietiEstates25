@@ -19,6 +19,19 @@ export class ListingController {
         return new Error('Listing not found');
     }
 
+
+    static async getListingsByIds(req){
+        const listingIds = req.body.listingIds; // Assuming listing IDs are sent in the request body
+
+        console.log("Fetching listings for IDs:", req.body);
+        const listings = await Listing.findAll({
+            where: { id: listingIds },
+            include: [Address],
+        });
+
+        return listings;
+    }
+
     static async createListing(req){
 
         const dataParse = JSON.parse(req.body.listingData); 

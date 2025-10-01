@@ -17,6 +17,15 @@ listingRouter.get("/listing/:listingId", (req, res, next) => {
     });
 });
 
+//goal: recupero listing multipli a partire da un arrat di listingId
+listingRouter.post("/listings/by-ids", (req, res, next) => {
+    ListingController.getListingsByIds(req).then(listings => {
+      res.json(listings);
+    }).catch(err => {
+      next(err);
+    });
+});
+
 listingRouter.post("/listing", enforceAuthentication, enforceAuthenticationByAgent, upload.array("photos"),(req, res, next) => {
     ListingController.createListing(req).then(listingItem => {
       res.status(201).json(listingItem.id);

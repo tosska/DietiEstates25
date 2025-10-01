@@ -1,4 +1,5 @@
 import {Offer} from "../models/Database.js";
+import { OfferService } from "../services/OfferService.js";
 
 export class OfferController {
 
@@ -53,7 +54,7 @@ export class OfferController {
     static async respondToOffer(req){
         return new Promise(async (resolve, reject) => {
             try {
- 
+                const offerResponse = req.body.response; 
                 let offer = await Offer.findByPk(req.params.offerId);
                 
                 if (!offer) {
@@ -64,9 +65,15 @@ export class OfferController {
                     return reject(new Error('This offer has already been responded to'));
                 }
 
-                const offerResponse = req.body.response; 
+                if(offerResponse !== 'Accepted' && offerResponse !== 'Rejected'){
+                    return reject(new Error('Invalid response. Must be "Accepted" or "Rejected".'));
+                }
     
                 await Offer.update({status: offerResponse}, {where: {id: offer.id}});
+
+                if(offerResponse === 'Accepted'){
+                    OfferService.setAllOffersRejectedForListing(offer.listing_id);
+                }
       
                 resolve(offer);
             } catch (error) {
@@ -104,6 +111,30 @@ export class OfferController {
             },
             order: [['listing_id', 'ASC'], ['offer_Date', 'ASC']] 
         })
+    }
+
+    static async getCountOfPendingOffersGroupListing(req){
+        
+        return Offer.count({
+            where: {
+                agent_id: req.userId,
+                status: "Pending"
+            },
+            group: ['listing_id']
+        })
+
+    }
+
+    static async getAllPendingOffersByListingId(req){
+
+        return Offer.findAll({
+            where: {
+                listing_id: req.params.listingId,
+                status: "Pending"
+            },
+            order: [['offer_Date', 'ASC']] 
+        })
+
     }
 
 }

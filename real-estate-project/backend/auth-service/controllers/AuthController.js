@@ -27,10 +27,9 @@ export class AuthController {
             throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
         }
         
-        return { userId: businessId, role: credentials.role };
+        return {authId: credentials.ID, userId: businessId, role: credentials.role };
     }
 
-    #getBusiness
 
     static async updateCredentials(req, res) {
         try {
