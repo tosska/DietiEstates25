@@ -3,138 +3,95 @@ import { OfferService } from "../services/OfferService.js";
 
 export class OfferController {
 
-    static async getOfferById(req){
-        return Offer.findByPk(req.params.offerId);
+
+    static async getOfferById(offerId) {
+        return Offer.findByPk(offerId);
     }
 
-    static async createOffer(req){
-        let offer = Offer.build(req.body);
+    static async createOffer(offerData) {
+        let offer = Offer.build(offerData);
         offer.status = 'Pending';
         offer.offerDate = new Date();
         return offer.save();
     }
 
-    static async updateOffer(req){
-        return new Promise(async (resolve, reject) => {
-            try {
- 
-                let { offerId, ...updateFields } = Offer.build(req.body);
-                if (!offerId) {
-                    return reject(new Error('Offer not found'));
-                }
-    
-                await Offer.update(updateFields, {where: {id: offerId}})
-      
-                resolve(offerId);
-            } catch (error) {
-                reject(error);
-            }
-        }); 
+    static async updateOffer(offerId, updateFields) {
+        await Offer.update(updateFields, { where: { id: offerId } });
+        return offerId;
     }
 
-        static async deleteOffer(req){
-        return new Promise(async (resolve, reject) => {
-            try {
- 
-                let offer = await Offer.findByPk(req.params.offerId);
-                if (!offer) {
-                    return reject(new Error('Offer not found'));
-                }
-    
-                await Offer.destroy({where: {id: offer.id}});
-      
-                resolve(offer);
-            } catch (error) {
-                reject(error);
-            }
-        }); 
+    static async deleteOffer(offerId) {
+        let offer = await Offer.findByPk(offerId);
+        if (!offer) throw new Error('Offer not found');
+        await Offer.destroy({ where: { id: offer.id } });
+        return offer;
     }
 
-
-    static async respondToOffer(req){
-        return new Promise(async (resolve, reject) => {
-            try {
-                const offerResponse = req.body.response; 
-                let offer = await Offer.findByPk(req.params.offerId);
-                
-                if (!offer) {
-                    return reject(new Error('Offer not found'));
-                }
-
-                if (offer.status!="Pending"){
-                    return reject(new Error('This offer has already been responded to'));
-                }
-
-                if(offerResponse !== 'Accepted' && offerResponse !== 'Rejected'){
-                    return reject(new Error('Invalid response. Must be "Accepted" or "Rejected".'));
-                }
-    
-                await Offer.update({status: offerResponse}, {where: {id: offer.id}});
-
-                if(offerResponse === 'Accepted'){
-                    OfferService.setAllOffersRejectedForListing(offer.listing_id);
-                }
-      
-                resolve(offer);
-            } catch (error) {
-                reject(error);
-            }
-        }); 
-    }
-
-
-    //da migliorare
-    static async getOfferHistoryForListing(req){
-
-        let whereClause={};
-    
-        if(req.userRole=="customer") {
-            whereClause= {listing_id: req.params.listingId,
-                          customer_id: req.userId};
-
-        } else if (req.userRole=="agent"){
-            whereClause= {listing_id: req.params.listingId,
-                          agent_id: req.userId};
+    static async respondToOffer(offerId, offerResponse) {
+        let offer = await Offer.findByPk(offerId);
+        if (!offer) throw new Error('Offer not found');
+        if (offer.status !== "Pending") throw new Error('This offer has already been responded to');
+        if (offerResponse !== 'Accepted' && offerResponse !== 'Rejected') {
+            throw new Error('Invalid response. Must be "Accepted" or "Rejected".');
         }
+        await Offer.update({ status: offerResponse }, { where: { id: offer.id } });
+        if (offerResponse === 'Accepted') {
+            OfferService.setAllOffersRejectedForListing(offer.listing_id);
+        }
+        return offer;
+    }
 
+    static async createCounteroffer(offerId, counterOfferData) {
+
+        console.log("Creating counteroffer for offer ID:", offerId);
+        
+        this.respondToOffer(offerId, 'Rejected');
+        
+        counterOfferData.counteroffer = true;
+
+        this.createOffer(counterOfferData);
+    }
+
+    static async getOfferHistoryForListing(listingId, userRole, userId) {
+        let whereClause = {};
+        if (userRole === "customer") {
+            whereClause = { listing_id: listingId, customer_id: userId };
+        } else if (userRole === "agent") {
+            whereClause = { listing_id: listingId, agent_id: userId };
+        }
         return Offer.findAll({
             where: whereClause,
-            order: [['offer_Date', 'ASC']] 
-        })
+            order: [['offer_Date', 'ASC']]
+        });
     }
 
-    static async getActiveOffersByAgent(req){
+    static async getActiveOffersByAgent(agentId) {
         return Offer.findAll({
             where: {
-                agent_id: req.userId,
+                agent_id: agentId,
                 status: "Pending"
             },
-            order: [['listing_id', 'ASC'], ['offer_Date', 'ASC']] 
-        })
+            order: [['listing_id', 'ASC'], ['offer_Date', 'ASC']]
+        });
     }
 
-    static async getCountOfPendingOffersGroupListing(req){
-        
+    static async getCountOfPendingOffersGroupListing(agentId) {
         return Offer.count({
             where: {
-                agent_id: req.userId,
+                agent_id: agentId,
                 status: "Pending"
             },
             group: ['listing_id']
-        })
-
+        });
     }
 
-    static async getAllPendingOffersByListingId(req){
-
+    static async getAllPendingOffersByListingId(listingId) {
         return Offer.findAll({
             where: {
-                listing_id: req.params.listingId,
+                listing_id: listingId,
                 status: "Pending"
             },
-            order: [['offer_Date', 'ASC']] 
-        })
-
+            order: [['offer_Date', 'ASC']]
+        });
     }
-
 }

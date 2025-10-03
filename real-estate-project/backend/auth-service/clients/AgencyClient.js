@@ -6,9 +6,11 @@ export class AgencyClient {
 
     static async getAgentId(credential_id) {
 
-        return axios.get(`${this.api_gatway_url}/intern/agent/${credential_id}/businessId`
+        const response = axios.get(`${this.api_gatway_url}/intern/agent/${credential_id}/businessId`
             , { headers: { 'apikey': process.env.INTERNAL_API_KEY } }
         )
+
+        return response.data.id;
     }
 
     static async getAdminId(credential_id) {

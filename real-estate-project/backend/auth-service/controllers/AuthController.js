@@ -26,6 +26,8 @@ export class AuthController {
         if(!businessId) {
             throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
         }
+
+        console.log("token pre ", {authId: credentials.ID, userId: businessId, role: credentials.role });
         
         return {authId: credentials.ID, userId: businessId, role: credentials.role };
     }
@@ -94,8 +96,8 @@ export class AuthController {
         }
     }
 
-    static issueToken(userId, role) {
-        return { token: Jwt.sign({ userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
+    static issueToken(authId, userId, role) {
+        return { token: Jwt.sign({authId, userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
     }
 
     static async validateToken(req, res) {
@@ -105,6 +107,7 @@ export class AuthController {
         }
         const decoded = Jwt.verify(token, process.env.TOKEN_SECRET || 'your-secret-key');
         return {
+            authId: decoded.authId, 
             userId: decoded.userId,
             role: decoded.role,
         };
