@@ -38,15 +38,15 @@ export class AgencyController {
 
         // Crea un nuovo indirizzo
         const address = await Address.create({
-            Street: street,
-            City: city,
-            Postal_Code: postalCode,
-            State: state,
-            Unit_Detail: unitDetail,
-            Longitude: longitude,
-            Latitude: latitude,
+            street: street,
+            city: city,
+            postalCode: postalCode,
+            state: state,
+            unitDetail: unitDetail,
+            longitude: longitude,
+            latitude: latitude,
         }, { transaction });
-        console.log('Indirizzo creato con ID:', address.AddressID);
+        console.log('Indirizzo creato con ID:', address.id);
 
         // Crea l'agenzia con il nuovo Address_ID
         const agency = await Agency.create({
@@ -55,7 +55,7 @@ export class AgencyController {
             VAT_Number: vatNumber,
             Website: website,
             ManagerAdmin_ID: null,
-            Address_ID: address.AddressID,
+            Address_ID: address.id,
         }, { transaction });
         console.log('Agenzia creata con ID:', agency.AgencyID);
 
@@ -99,7 +99,7 @@ export class AgencyController {
             Manager: true,
             Agency_ID: agency.AgencyID, // Obbligatorio
             role: 'admin',
-            CredentialsID: null, // Potrebbe essere collegato a Credentials in auth-service
+            credentialsId: managerData.userId, // Potrebbe essere collegato a Credentials in auth-service
             }, { transaction });
             console.log('Admin creato in agency-service con ID:', adminId);
         }

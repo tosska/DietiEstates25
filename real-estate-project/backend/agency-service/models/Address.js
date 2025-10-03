@@ -8,31 +8,31 @@ export function createModel(database) {
             primaryKey: true,
             autoIncrement: true,
         },
-        Street: {
+        street: {
             type: DataTypes.STRING(255),
             allowNull: false,
         },
-        City: {
+        city: {
             type: DataTypes.STRING(255),
             allowNull: false,
         },
-        Postal_Code: {
+        postalCode: {
             type: DataTypes.STRING(255),
             allowNull: false,
         },
-        State: {
+        state: {
             type: DataTypes.STRING(255),
             allowNull: false,
         },
-        Unit_Detail: {
+        unitDetail: {
             type: DataTypes.STRING(255),
             allowNull: false,
         },
-        Longitude: {
+        longitude: {
             type: DataTypes.FLOAT(10),
             allowNull: true,
         },
-        Latitude: {
+        latitude: {
             type: DataTypes.FLOAT(10),
             allowNull: true,
         },

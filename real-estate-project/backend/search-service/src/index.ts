@@ -66,7 +66,7 @@ async function bootstrap() {
 
 
   const listingSearchEngine: SearchEngine<Listing> = await MeiliSearchEngine.create(
-    'http://localhost:4567', 
+    'http://localhost:7700', 
     undefined,
     'listings', 
     'id'

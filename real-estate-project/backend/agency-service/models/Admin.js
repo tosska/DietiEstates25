@@ -22,7 +22,7 @@ export function createModel(database) {
             allowNull: false,
             defaultValue: 'admin',
         },
-        CredentialsID: {
+        credentialsId: {
             type: DataTypes.INTEGER,
             allowNull: true,
             unique: true,
