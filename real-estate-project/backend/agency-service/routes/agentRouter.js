@@ -12,6 +12,16 @@ agentRouter.post('/agents', async (req, res) => {
     }
 });
 
+agentRouter.get('/agent/:id', async (req, res) => {
+    try {
+      const agentId = req.params.id;
+      const result = await AgentController.getAgentById(agentId);
+      res.status(200).json(result);
+    } catch (error) {
+        res.status(404).json({ message: error.message });
+    }
+})
+
 agentRouter.get("/intern/agent/:id/businessId", (req, res, next) => {
     AgentController.getAgentId(req).then(agentId => {
       res.json(agentId);

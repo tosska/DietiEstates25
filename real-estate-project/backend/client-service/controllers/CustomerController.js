@@ -29,12 +29,8 @@ export class CustomerController {
         return customers;
     }
 
-    static async getCustomerById(req, res) {
-        const { id } = req.params;
-        const customer = await Customer.findOne({
-            where: { CredentialsID: id },
-            attributes: ['id', 'CredentialsID', 'Name', 'Surname', 'Phone', 'Registration_Date'], // Aggiunto CredentialsID
-        });
+    static async getCustomerById(customerId) {
+        const customer = await Customer.findByPk(customerId);
         if (!customer) {
             throw new Error('Customer non trovato');
         }

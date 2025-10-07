@@ -8,38 +8,33 @@ export function createModel(database) {
             primaryKey: true,
             autoIncrement: true,
         },
-        Name: {
+        name: {
             type: DataTypes.STRING(255),
             allowNull: true,    // per test
         },
-        Surname: {
+        surname: {
             type: DataTypes.STRING(255),
             allowNull: true,    // per test
         },
-        Phone: {
+        phone: {
             type: DataTypes.STRING(255),
             allowNull: true,    // per test
         },
-        VAT_Number: {
+        vatNumber: {
             type: DataTypes.STRING(255),
             allowNull: true,
         },
-        Years_Experience: {
+        yearsExperience: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
-        Agency_ID: {
+        agencyId: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        CreatorAdmin_ID: {
+        creatorAdminId: {
             type: DataTypes.INTEGER,
             allowNull: false,
-        },
-        role: { 
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: 'agent',
         },
         CredentialsID: {
             type: DataTypes.INTEGER,

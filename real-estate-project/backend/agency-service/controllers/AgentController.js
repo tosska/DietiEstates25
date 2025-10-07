@@ -34,6 +34,19 @@ export class AgentController {
     }
 
 
+    static async getAgentById(agentId) {
+
+        const agent = await Agent.findByPk(agentId);
+        if (!agent) {
+            throw new Error('Agente non trovato');
+        }
+
+        return agent;
+
+    }
+        
+
+
     static async getAgentId(req) {
 
         const credential_id = req.params.id;

@@ -25,9 +25,10 @@ customerRouter.get('/customers', verifyAuth, async (req, res) => {
 });
 
 // Read: Ottieni un customer per ID (richiede autenticazione)
-customerRouter.get('/customers/:id', verifyAuth, async (req, res) => {
+customerRouter.get('/customer/:id', verifyAuth, async (req, res) => {
     try {
-        const customer = await CustomerController.getCustomerById(req, res);
+        const customerId = req.params.id;
+        const customer = await CustomerController.getCustomerById(customerId);
         res.status(200).json(customer);
     } catch (error) {
         res.status(404).json({ message: error.message });

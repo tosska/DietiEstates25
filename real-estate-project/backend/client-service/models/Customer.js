@@ -9,23 +9,23 @@ export function createModel(database) {
       primaryKey: true,
       autoIncrement: true,
     },
-    Name: {
+    name: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    Surname: {
+    surname: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    Registration_Date: {
+    registrationDate: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    Phone: {
+    phone: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    CredentialsID: {
+    credentialsId: {
             type: DataTypes.INTEGER,
             allowNull: false,
             unique: true,
