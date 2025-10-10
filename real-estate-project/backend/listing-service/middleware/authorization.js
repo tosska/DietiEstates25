@@ -1,7 +1,38 @@
 
+import { AuthClient } from "../clients/AuthClient.js";
 import { AuthController } from "../controllers/AuthController.js";
 import { ListingController } from "../controllers/ListingController.js";
 
+
+export async function userContextMiddleware(req, res, next) {
+
+    const authId = req.headers['x-user-authid'];
+    const userId = req.headers["x-user-userid"];
+    const role = req.headers['x-user-role'];
+    const authHeader = req.headers['authorization']
+    const token = authHeader?.split(' ')[1];
+    
+    if(!authId || !userId || !role) {  
+        next({status: 401, message: "Unauthorized"});
+        return;
+    }
+
+    try {
+        await AuthClient.checkUser(authId);
+    }
+    catch(error) {
+        next({status: 401, message: "Unauthorized"})
+    }
+
+    req.token = token;
+    req.authId = authId;
+    req.userId = userId;
+    req.role = role;
+
+    next();
+}
+
+/*
 export function enforceAuthentication(req, res, next) {
     const authHeader = req.headers['authorization']
     const token = authHeader?.split(' ')[1];
@@ -12,7 +43,8 @@ export function enforceAuthentication(req, res, next) {
 
     isTokenValid(token)
         .then(data => {
-            req.userId = data.id;
+            req.authId = data.authId
+            req.userId = data.userId;
             req.userRole = data.role;
             next();
         })
@@ -21,6 +53,7 @@ export function enforceAuthentication(req, res, next) {
         })
         );
 }
+*/
 
 
 async function isTokenValid(token) {
@@ -45,7 +78,7 @@ async function isTokenValid(token) {
 
 export function enforceAuthenticationByAgent(req, res, next) {
 
-    if(req.userRole == "agent"){
+    if(req.role == "agent"){
         next();
     } else {
         next({

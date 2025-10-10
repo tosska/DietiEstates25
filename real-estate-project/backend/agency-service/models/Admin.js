@@ -3,17 +3,17 @@ import { createHash } from 'crypto';
 
 export function createModel(database) {
     database.define('Admin', {
-        AdminID: { 
+        id: { 
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
         },
-        Manager: {
+        manager: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: false,
         },
-        Agency_ID: {
+        agencyId: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },

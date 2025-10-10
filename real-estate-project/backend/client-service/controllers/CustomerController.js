@@ -189,7 +189,7 @@ export class CustomerController {
         const credentialsId = req.params.id;
 
         const customerId = await Customer.findOne({
-            where: { CredentialsID: credentialsId },
+            where: { credentialsId: credentialsId },
             attributes: ['id'],
         });
 

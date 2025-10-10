@@ -97,7 +97,11 @@ export class AuthController {
     }
 
     static issueToken(authId, userId, role) {
-        return { token: Jwt.sign({authId, userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
+        try {
+             return { token: Jwt.sign({authId, userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` , issuer: 'auth-service'}) };
+        } catch (error) {
+            console.log(error);
+        }   
     }
 
     static async validateToken(req, res) {
@@ -351,17 +355,31 @@ export class AuthController {
 
 
 
-
+    //da cancellare
     static async isTokenValid(token) {
           try {
               const decoded = Jwt.verify(token, process.env.TOKEN_SECRET || 'your-secret-key');
-              const credentials = await Credentials.findByPk(decoded.userId);
+              const credentials = await Credentials.findByPk(decoded.authId);
               if (!credentials) {
                   throw new Error('Utente non trovato');
               }
-              return { userId: decoded.userId, role: decoded.role };
+              return { authId: decoded.authId, userId: decoded.userId, role: decoded.role };
           } catch (error) {
               throw new Error('Token non valido');
           }
-      }
+    }
+
+
+    static async checkUser(credentialId) {
+
+        let user = await Credentials.findByPk(credentialId);
+
+        if(!user) {
+            throw new Error("User not found");
+        }
+
+        return true;
+    }
+
+
 }

@@ -12,6 +12,7 @@ export const authenticationRouter = express.Router();
               const {authId, userId, role } = credentials;
               console.log('Generazione token con authId', authId, 'userId:', userId, 'e role:', role); // Log
               res.json(AuthController.issueToken(authId, userId, role));
+              console.log("token generato")
           } else {
               res.status(401).json({ error: "Invalid credentials. Try again." });
           }
@@ -107,25 +108,20 @@ export const authenticationRouter = express.Router();
         }
   });
 
-// TEMPORANEAMENTE QUI (da considerare microservizio geo-service)
-authenticationRouter.get('/api/geocode', async (req, res) => {
-  const { lat, lon, query } = req.query;
-  try {
-    let url;
-    if (query) {
-      url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=1`;
-    } else if (lat && lon) {
-      url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
-    } else {
-      return res.status(400).json({ error: 'Parametri mancanti' });
-    }
 
-    const response = await axios.get(url);
-    res.json(response.data);
-  } catch (error) {
-    res.status(500).json({ error: 'Errore nella geolocalizzazione' });
-  }
+authenticationRouter.get('/check/user/:id', (req, res, next) => {
+    const id = req.params.id;
+    AuthController.checkUser(id).then(result => {
+      res.status(200).json(result);
+    }).catch(err => {
+      next(err);
+      console.log(err.message);
+    });
 });
+
+
+
+
 
   
 

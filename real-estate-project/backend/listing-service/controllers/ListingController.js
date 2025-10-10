@@ -1,3 +1,4 @@
+import { AgencyClient } from "../clients/AgencyClient.js";
 import {Listing, Address, Photo, database} from "../models/Database.js";
 import { ListingPublisher } from "../models/ListingPublisher.js";
 import { PhotoService } from "../services/PhotoService.js";
@@ -7,16 +8,24 @@ export class ListingController {
     static async getListingById(req){
         const listingId = req.params.listingId;
         let listing = await Listing.findByPk(listingId, {
-            include: [Address],
+            include: [Address, Photo],
         });
 
+        if(!listing){
+            return new Error('Listing not found');
+        }
+
+        return listing;
+
+        /*
         if(listing){
             const photos = await PhotoService.getPhotosByListingIdAndSetUrl(listingId);
             listing.dataValues.Photos = photos;
             return listing;
         }
 
-        return new Error('Listing not found');
+        
+        */
     }
 
 
@@ -41,6 +50,11 @@ export class ListingController {
 
         listingData.publicationDate = new Date();
         listingData.status = "Active";
+        listingData.agentId = req.userId;
+        listingData.agencyId = await AgencyClient.getAgencyIdByAgentId(listingData.agentId);
+
+        console.log(listingData.agencyId)
+
         
         const addressDB = await Address.create(address, {transaction});
         
@@ -150,12 +164,12 @@ export class ListingController {
 
         return Listing.findAll({
             where: { status: 'Active', agentId: req.userId},
-            include: [Address]
+            include: [Address, Photo]
         });
     }
 
     static async getLatestListings(req){
-        const limit = parseInt(req.query.limit) || 4; // Numero massimo di annunci da restituire, default 10
+        const limit = parseInt(req.query.limit) || 4; // Numero massimo di annunci da restituire, default 4
 
         return Listing.findAll({
             where: { status: 'Active' },

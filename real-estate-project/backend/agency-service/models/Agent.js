@@ -36,7 +36,7 @@ export function createModel(database) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        CredentialsID: {
+        credentialsId: {
             type: DataTypes.INTEGER,
             allowNull: false,
             unique: true,

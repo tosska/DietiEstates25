@@ -23,8 +23,8 @@ export const { Agency } = database.models;
 export const { Address } = database.models;
 
 // Relazioni
-Agent.belongsTo(Agency, { foreignKey: 'Agency_ID' });
-Agent.belongsTo(Admin, { foreignKey: 'CreatorAdmin_ID' });
+Agent.belongsTo(Agency, { foreignKey: 'agencyId' });
+Agent.belongsTo(Admin, { foreignKey: 'creatorAdminId' });
 Agency.belongsTo(Admin, { foreignKey: 'ManagerAdmin_ID', as: 'ManagerAdmin' });
 Agency.belongsTo(Address, { foreignKey: 'Address_ID' });
 
