@@ -2,56 +2,186 @@ _format_version: "3.0"
 _transform: true
 
 consumers:
-  - username: auth-service
+  # 🔑 Consumer usato dai microservizi interni
+  - username: intern-auth
     keyauth_credentials:
-      - key: dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd  # Usa la stessa chiave segreta definita nel file docker-compose.yml
+      - key: dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
 
+  # 👤 Consumer per client esterni con JWT
+  - username: tokenjwt
+    jwt_secrets:
+      - algorithm: HS256
+        key: auth-service
+        secret: your-secret-key
 
 services:
+  # -----------------------
+  # AUTH SERVICE
+  # -----------------------
   - name: auth
     url: http://host.docker.internal:3001
     routes:
       - name: auth-route
         paths:
           - /auth-service
+ 
+
+  # -----------------------
+  # LISTING SERVICE
+  # -----------------------
   - name: listing
     url: http://host.docker.internal:3003
     routes:
-      - name: listing-route
+      # 🔐 JWT-protetta
+      - name: listing-protected
         paths:
           - /listing-service
+        strip_path: true
+        plugins:
+          - name: cors
+            config:
+              origins:
+                - http://localhost:4200      # dominio Angular
+              methods:
+                - GET
+                - POST
+                - PUT
+                - PATCH
+                - DELETE
+                - OPTIONS
+              headers:
+                - Authorization
+                - Content-Type
+                - Accept
+                - Origin
+              exposed_headers:
+                - Authorization
+              credentials: true
+              max_age: 3600
+          - name: jwt
+            config:
+              key_claim_name: iss
+              claims_to_verify: [exp]
+          - name: custom-jwt-headers
+
+
+      # 🌐 Pubblica
+      - name: listing-public
+        paths:
+          - /listing-public
+        strip_path: true
+
+
+
+  # -----------------------
+  # CUSTOMER SERVICE
+  # -----------------------
   - name: customer
     url: http://host.docker.internal:3002
     routes:
-      - name: customer-route
+      - name: customer-protected
         paths:
           - /customer-service
-      - name: customer-internal-route          
-        paths:
-          - /intern   
-        strip_path: false
+        strip_path: true
         plugins:
-          - name: key-auth  
+          - name: jwt
+            config:
+              claims_to_verify: [exp]
+              key_claim_name: iss
+              run_on_preflight: false
+          - name: request-transformer
+            config:
+              add:
+                headers:
+                  - "X-User-authId:{{jwt_claim_authId}}"
+                  - "X-User-userId:{{jwt_claim_userId}}"
+                  - "X-User-role:{{jwt_claim_role}}"
+
+      - name: customer-public
+        paths:
+          - /customer-public
+        strip_path: true
+
+
+  # -----------------------
+  # AGENCY SERVICE
+  # -----------------------
   - name: agency
     url: http://host.docker.internal:3000
     routes:
-      - name: agency-route
+      - name: agency-protected
         paths:
           - /agency-service
-      - name: agency-internal-route          
-        paths:
-          - /agency-service/intern   
+        strip_path: true
         plugins:
-          - name: key-auth  
+          - name: jwt
+            config:
+              claims_to_verify: [exp]
+              key_claim_name: iss
+              run_on_preflight: false
+          - name: request-transformer
+            config:
+              add:
+                headers:
+                  - "X-User-authId:{{jwt_claim_authId}}"
+                  - "X-User-userId:{{jwt_claim_userId}}"
+                  - "X-User-role:{{jwt_claim_role}}"
+
+      - name: agency-public
+        paths:
+          - /agency-public
+        strip_path: true
+
+      - name: agency-internal
+        paths:
+          - /agency-internal
+        strip_path: true
+        plugins:
+          - name: key-auth
+
+  # -----------------------
+  # OFFER SERVICE
+  # -----------------------
+  - name: offer
+    url: http://host.docker.internal:3004
+    routes:
+      - name: offer-protected
+        paths:
+          - /offer-service
+        strip_path: true
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify: [exp]
+              key_claim_name: iss
+              run_on_preflight: false
+          - name: request-transformer
+            config:
+              add:
+                headers:
+                  - "X-User-authId:{{jwt_claim_authId}}"
+                  - "X-User-userId:{{jwt_claim_userId}}"
+                  - "X-User-role:{{jwt_claim_role}}"
+
+      - name: offer-public
+        paths:
+          - /offer-public
+        strip_path: true
+
+      - name: offer-internal
+        paths:
+          - /offer-internal
+        strip_path: true
+        plugins:
+          - name: key-auth
+
+  # -----------------------
+  # SEARCH SERVICE
+  # -----------------------
   - name: search
     url: http://host.docker.internal:3005
     routes:
       - name: search-route
         paths:
           - /search-service
-  - name: offer
-    url: http://host.docker.internal:3004
-    routes:
-      - name: offer-route
-        paths:
-          - /offer-service
+        strip_path: true

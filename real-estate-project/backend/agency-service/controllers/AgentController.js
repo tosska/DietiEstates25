@@ -35,6 +35,7 @@ export class AgentController {
 
 
     static async getAgentById(agentId) {
+        
 
         const agent = await Agent.findByPk(agentId);
         if (!agent) {
@@ -42,6 +43,18 @@ export class AgentController {
         }
 
         return agent;
+
+    }
+
+    static async getAgencyIdByAgentId(agentId) {
+
+        const agent = await Agent.findByPk(agentId);
+        if (!agent) {
+            throw new Error('Agente non trovato');
+        }
+
+        return agent.dataValues.agencyId;
+
 
     }
         
@@ -52,8 +65,8 @@ export class AgentController {
         const credential_id = req.params.id;
 
         return Agent.findOne({
-            where: { CredentialsID: credential_id },
-            attributes: ['AgentID'],
+            where: { credentialsId: credential_id },
+            attributes: ['id'],
         });
     }
 }

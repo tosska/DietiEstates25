@@ -1,6 +1,6 @@
 import express from "express";
 import { ListingController } from "../controllers/ListingController.js";
-import { enforceAuthentication, enforceAuthenticationByAgent} from "../middleware/authorization.js";
+import { enforceAuthenticationByAgent, userContextMiddleware} from "../middleware/authorization.js";
 import { upload } from "../middleware/storageConfig.js";
 
 
@@ -9,7 +9,7 @@ export const listingRouter = new express.Router();
 //offerRouter.use(enforceAuthentication);
 
 //goal: recupero listing
-listingRouter.get("/listing/:listingId", (req, res, next) => {
+listingRouter.get("/listing/:listingId", userContextMiddleware,(req, res, next) => {
     ListingController.getListingById(req).then(listingItem => {
       res.json(listingItem);
     }).catch(err => {
@@ -26,7 +26,7 @@ listingRouter.post("/listings/by-ids", (req, res, next) => {
     });
 });
 
-listingRouter.post("/listing", enforceAuthentication, enforceAuthenticationByAgent, upload.array("photos"),(req, res, next) => {
+listingRouter.post("/listing", userContextMiddleware, enforceAuthenticationByAgent, upload.array("photos"),(req, res, next) => {
     ListingController.createListing(req).then(listingItem => {
       res.status(201).json(listingItem.id);
     }).catch(err => {
@@ -35,7 +35,7 @@ listingRouter.post("/listing", enforceAuthentication, enforceAuthenticationByAge
     });
 });
 
-listingRouter.put("/listing/:listingId", enforceAuthentication,enforceAuthenticationByAgent, (req, res, next) => {
+listingRouter.put("/listing/:listingId", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
     ListingController.updateListing(req).then(listingItem => {
       res.status(200).json(listingItem.id);
     }).catch(err => {
@@ -44,7 +44,7 @@ listingRouter.put("/listing/:listingId", enforceAuthentication,enforceAuthentica
     });
 });
 
-listingRouter.delete("/listing/:listingId", enforceAuthentication, enforceAuthenticationByAgent, (req, res, next) => {
+listingRouter.delete("/listing/:listingId", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
     ListingController.deleteListing(req).then(listingItem => {
       res.status(200).json(listingItem.id);
     }).catch(err => {
@@ -54,7 +54,7 @@ listingRouter.delete("/listing/:listingId", enforceAuthentication, enforceAuthen
 });
 
 
-listingRouter.put("/listing/:listingId/closing", enforceAuthentication, enforceAuthenticationByAgent, (req, res, next) => {
+listingRouter.put("/listing/:listingId/closing", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
     ListingController.closeListing(req).then(listingItem => {
       res.status(200).json(listingItem.status);
     }).catch(err => {
@@ -63,7 +63,7 @@ listingRouter.put("/listing/:listingId/closing", enforceAuthentication, enforceA
     });
 });
 
-listingRouter.get("/agent/listings/active", enforceAuthentication, enforceAuthenticationByAgent, (req, res, next) => {
+listingRouter.get("/agent/listings/active", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
     ListingController.getActiveListingsForAgent(req).then(listings => {
       res.status(200).json(listings);
     }).catch(err => {
@@ -72,7 +72,7 @@ listingRouter.get("/agent/listings/active", enforceAuthentication, enforceAuthen
     });
 });
 
-listingRouter.get("/listings/latest", enforceAuthentication, enforceAuthenticationByAgent, (req, res, next) => {
+listingRouter.get("/listings/latest", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
     ListingController.getLatestListings(req).then(listings => {
       res.status(200).json(listings);
     }).catch(err => {
