@@ -10,7 +10,7 @@ export class AdminController {
         }
 
         const admin = await Admin.create({
-            CredentialsID: credentialsId,
+            credentialsId: credentialsId,
             Agency_ID: agencyId || null,
             Manager: manager || false,
             role: 'admin',
@@ -45,7 +45,7 @@ export class AdminController {
     static async getAdminById(req, res) {
         const { id } = req.params;
         const admin = await Admin.findByPk(id, {
-            attributes: ['AdminID', 'CredentialsID', 'Agency_ID', 'Manager', 'role'],
+            attributes: ['id', 'credentialsId', 'Agency_ID', 'Manager', 'role'],
         });
 
         if (!admin) {
@@ -54,4 +54,5 @@ export class AdminController {
 
         return admin;
     }
+    
 }

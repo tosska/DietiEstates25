@@ -15,6 +15,8 @@ export class AgencyClient {
 
     static async getAdminId(credential_id) {
 
+        console.log(process.env.INTERNAL_API_KEY);
+        
         return axios.get(`${this.api_gatway_url}/intern/admin/${credential_id}/businessId`
             , { headers: { 'apikey': process.env.INTERNAL_API_KEY } }
         )

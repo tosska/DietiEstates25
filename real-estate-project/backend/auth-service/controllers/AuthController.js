@@ -13,7 +13,7 @@ export class AuthController {
 
         const hashedPwd = createHash('sha256').update(pwd).digest('hex');
         const credentials = await Credentials.findOne({
-            where: { Email: usr, password: hashedPwd },
+            where: { email: usr, password: hashedPwd },
         });
 
         if (!credentials) {
@@ -119,14 +119,14 @@ export class AuthController {
         if (!email || !password) {
             throw new Error('Email e password sono obbligatori');
         }
-        const existingCredentials = await Credentials.findOne({ where: { Email: email } });
+        const existingCredentials = await Credentials.findOne({ where: { email: email } });
         if (existingCredentials) {
             console.log('Email già registrata:', email);
             throw new Error('Email già registrata');
         }
 
         const newCredentials = await Credentials.create({
-            Email: email,
+            email: email,
             password: password, // Considera di hashare la password come negli altri metodi
             role: 'customer',
         });
@@ -258,7 +258,7 @@ export class AuthController {
         }
 
         const newCredentials = await Credentials.create({
-        Email: email,
+        email: email,
         password: password,
         role: 'admin', // Ruolo admin per il manager
         });

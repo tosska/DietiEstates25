@@ -9,11 +9,11 @@ export class CustomerController {
         }
 
         const customer = await Customer.create({
-            CredentialsID: credentialsId,
-            Name: name,
-            Surname: surname,
-            Phone: phone || null,
-            Registration_Date: new Date(),
+            credentialsId: credentialsId,
+            name: name,
+            surname: surname,
+            phone: phone || null,
+            registrationDate: new Date(),
         });
 
         return {
@@ -24,7 +24,7 @@ export class CustomerController {
 
     static async getAllCustomers(req, res) {
         const customers = await Customer.findAll({
-            attributes: ['id', 'CredentialsID', 'Name', 'Surname', 'Phone', 'Registration_Date'], // Aggiunto CredentialsID
+            attributes: ['id', 'credentialsId', 'name', 'surname', 'phone', 'registrationDate'],
         });
         return customers;
     }
@@ -41,26 +41,26 @@ export class CustomerController {
         let responseSent = false;
 
         try {
-            const { id } = req.params; // Questo è CredentialsID
+            const { id } = req.params; 
             const { email, password, name, surname, phone } = req.body;
             const { userId, role } = req.user;
 
             console.log('Richiesta updateCustomer - ID:', id, 'Body:', req.body, 'User:', { userId, role });
 
-            // Cerca il customer usando CredentialsID
+            // Cerca il customer usando credentialsID
             const customer = await Customer.findOne({
-                where: { CredentialsID: id }
+                where: { credentialsId: id }
             });
             if (!customer) {
-                console.log('Customer non trovato per CredentialsID:', id);
+                console.log('Customer non trovato per credentialsId:', id);
                 res.status(404).json({ error: 'Customer non trovato' });
                 responseSent = true;
                 return;
             }
 
             // Autorizza admin o il customer stesso
-            if (role !== 'admin' && parseInt(userId) !== customer.CredentialsID) {
-                console.log('Autorizzazione fallita per userId:', userId, 'e CredentialsID:', customer.CredentialsID);
+            if (role !== 'admin' && parseInt(userId) !== customer.credentialsId) {
+                console.log('Autorizzazione fallita per userId:', userId, 'e credentialsId:', customer.credentialsId);
                 res.status(403).json({ error: 'Non autorizzato a modificare questo customer' });
                 responseSent = true;
                 return;
@@ -80,10 +80,10 @@ export class CustomerController {
             if (email || password) {
                 const authServiceUrl = 'http://localhost:3001/credentials/' + id;
                 const credentialsUpdateData = {};
-                if (email) credentialsUpdateData.Email = email;
+                if (email) credentialsUpdateData.email = email;
                 if (password) credentialsUpdateData.password = password;
 
-                console.log('Chiamata a auth-service per CredentialsID:', id, 'Dati:', credentialsUpdateData);
+                console.log('Chiamata a auth-service per credentialsId:', id, 'Dati:', credentialsUpdateData);
                 const fetchResponse = await fetch(authServiceUrl, {
                     method: 'PUT',
                     headers: {
@@ -117,25 +117,25 @@ export class CustomerController {
         let responseSent = false;
 
         try {
-            const { id } = req.params; // Questo è CredentialsID
+            const { id } = req.params; 
             const { userId, role } = req.user;
 
             console.log('Richiesta deleteCustomer - ID:', id, 'User:', { userId, role }, 'Header Authorization ricevuto:', req.headers.authorization);
 
-            // Cerca il customer usando CredentialsID
+            // Cerca il customer usando credentialsId
             const customer = await Customer.findOne({
-                where: { CredentialsID: id }
+                where: { credentialsId: id }
             });
             if (!customer) {
-                console.log('Customer non trovato per CredentialsID:', id);
+                console.log('Customer non trovato per credentialsId:', id);
                 res.status(404).json({ error: 'Customer non trovato' });
                 responseSent = true;
                 return;
             }
 
             // Autorizza admin o il customer stesso
-            if (role !== 'admin' && parseInt(userId) !== customer.CredentialsID) {
-                console.log('Autorizzazione fallita per userId:', userId, 'e CredentialsID:', customer.CredentialsID);
+            if (role !== 'admin' && parseInt(userId) !== customer.credentialsId) {
+                console.log('Autorizzazione fallita per userId:', userId, 'e CredentialsId:', customer.credentialsId);
                 res.status(403).json({ error: 'Non autorizzato a eliminare questo customer' });
                 responseSent = true;
                 return;
@@ -189,7 +189,7 @@ export class CustomerController {
         const credentialsId = req.params.id;
 
         const customerId = await Customer.findOne({
-            where: { CredentialsID: credentialsId },
+            where: { credentialsId: credentialsId },
             attributes: ['id'],
         });
 

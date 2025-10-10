@@ -22,7 +22,7 @@ adminRouter.post('/manager', async (req, res) => {
     }
 });
 
-adminRouter.get('/admins/:id', async (req, res) => {
+adminRouter.get('/admin/:id', async (req, res) => {
     try {
         const admin = await AdminController.getAdminById(req, res);
         res.status(200).json(admin);
@@ -30,3 +30,4 @@ adminRouter.get('/admins/:id', async (req, res) => {
         res.status(404).json({ message: error.message });
     }
 });
+

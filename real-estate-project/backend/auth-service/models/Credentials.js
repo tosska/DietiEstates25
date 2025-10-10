@@ -8,7 +8,7 @@ export function createModel(database) {
             primaryKey: true,
             autoIncrement: true,
         },
-        Email: {
+        email: {
             type: DataTypes.STRING(255),
             allowNull: false,
             unique: true,

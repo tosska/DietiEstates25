@@ -30,6 +30,5 @@ export function createModel(database) {
             allowNull: false,
             unique: true,
     },
-  }, { 
-  });
+  }, { timestamps: false });
 }
