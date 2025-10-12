@@ -20,16 +20,6 @@ searchRouter.post("/listings/search", (req: Request, res: Response, next: NextFu
 });
 
 
-//da cancellare (test)
-searchRouter.post("/verify-token", (req, res, next) => {
-    //Jwt.verify(token, process.env.TOKEN_SECRET, callback);
-    console.log("ho ricevuto una chiamata");
-    let data = { id: 2, role: "agent" };
-    res.json(data);
-    //return res.status(401).json({ error: "Invalid token"})
-});
-
-
 
 
 

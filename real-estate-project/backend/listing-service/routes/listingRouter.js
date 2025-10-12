@@ -9,7 +9,7 @@ export const listingRouter = new express.Router();
 //offerRouter.use(enforceAuthentication);
 
 //goal: recupero listing
-listingRouter.get("/listing/:listingId", userContextMiddleware,(req, res, next) => {
+listingRouter.get("/listing-public/listing/:listingId",(req, res, next) => {
     ListingController.getListingById(req).then(listingItem => {
       res.json(listingItem);
     }).catch(err => {
@@ -72,7 +72,7 @@ listingRouter.get("/agent/listings/active", userContextMiddleware, enforceAuthen
     });
 });
 
-listingRouter.get("/listings/latest", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
+listingRouter.get("/listing-public/listings/latest", (req, res, next) => {
     ListingController.getLatestListings(req).then(listings => {
       res.status(200).json(listings);
     }).catch(err => {

@@ -3,14 +3,14 @@ import axios from 'axios';
 export class AgencyClient {
 
     static api_gateway_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/agency-service';
-    static intern_url = process.env.API_GATEWAY_URL_INTERN || 'http://localhost:8000/agency-internal';
+    static api_gateway_internal_url = process.env.API_GATEWAY_URL_INTERN || 'http://localhost:8000/agency-internal';
     
 
     static async getAgentId(credential_id) {
 
         try {
             const response = await axios.get(
-                `${this.intern_url}/agent/${credential_id}/businessId`,
+                `${this.api_gateway_internal_url}/agent/${credential_id}/businessId`,
                 { headers: { 'apikey': process.env.INTERNAL_API_KEY } }
             );
                        
@@ -23,7 +23,7 @@ export class AgencyClient {
 
     static async getAdminId(credential_id) {
 
-        return axios.get(`${this.intern_url}/admin/${credential_id}/businessId`
+        return axios.get(`${this.api_gateway_internal_url}/admin/${credential_id}/businessId`
             , { headers: { 'apikey': process.env.INTERNAL_API_KEY } }
         )
 

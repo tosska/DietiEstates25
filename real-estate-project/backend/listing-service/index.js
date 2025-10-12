@@ -12,11 +12,11 @@ app.use(morgan('dev'));
 
 app.use(cors()); 
 
-ListingPublisher.init();
+//ListingPublisher.init();
 
 // Parse incoming requests with a JSON payload
 app.use(express.json());
-app.use("/images/active", express.static(path.join(process.cwd(), "images/active"))); //middlware che serve file statici su un certo uri
+app.use("/listing-public/images/active", express.static(path.join(process.cwd(), "images/active"))); //middlware che serve file statici su un certo uri
 
 
 //error handler

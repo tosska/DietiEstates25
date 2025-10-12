@@ -69,7 +69,15 @@ services:
       - name: listing-public
         paths:
           - /listing-public
-        strip_path: true
+        strip_path: false
+
+
+      - name: listing-internal
+        paths:
+          - /listing-internal
+        strip_path: false
+        plugins:
+          - name: key-auth
 
 
 
@@ -84,23 +92,46 @@ services:
           - /customer-service
         strip_path: true
         plugins:
+          - name: cors
+            config:
+              origins:
+                - http://localhost:4200      # dominio Angular
+              methods:
+                - GET
+                - POST
+                - PUT
+                - PATCH
+                - DELETE
+                - OPTIONS
+              headers:
+                - Authorization
+                - Content-Type
+                - Accept
+                - Origin
+              exposed_headers:
+                - Authorization
+              credentials: true
+              max_age: 3600
           - name: jwt
             config:
-              claims_to_verify: [exp]
               key_claim_name: iss
-              run_on_preflight: false
-          - name: request-transformer
-            config:
-              add:
-                headers:
-                  - "X-User-authId:{{jwt_claim_authId}}"
-                  - "X-User-userId:{{jwt_claim_userId}}"
-                  - "X-User-role:{{jwt_claim_role}}"
+              claims_to_verify: [exp]
+          - name: custom-jwt-headers
+          
+
 
       - name: customer-public
         paths:
           - /customer-public
-        strip_path: true
+        strip_path: false
+
+      - name: customer-internal
+        paths:
+          - /customer-internal
+        strip_path: false
+        plugins:
+          - name: key-auth
+
 
 
   # -----------------------
@@ -114,28 +145,41 @@ services:
           - /agency-service
         strip_path: true
         plugins:
+          - name: cors
+            config:
+              origins:
+                - http://localhost:4200      # dominio Angular
+              methods:
+                - GET
+                - POST
+                - PUT
+                - PATCH
+                - DELETE
+                - OPTIONS
+              headers:
+                - Authorization
+                - Content-Type
+                - Accept
+                - Origin
+              exposed_headers:
+                - Authorization
+              credentials: true
+              max_age: 3600
           - name: jwt
             config:
-              claims_to_verify: [exp]
               key_claim_name: iss
-              run_on_preflight: false
-          - name: request-transformer
-            config:
-              add:
-                headers:
-                  - "X-User-authId:{{jwt_claim_authId}}"
-                  - "X-User-userId:{{jwt_claim_userId}}"
-                  - "X-User-role:{{jwt_claim_role}}"
+              claims_to_verify: [exp]
+          - name: custom-jwt-headers
 
       - name: agency-public
         paths:
           - /agency-public
-        strip_path: true
+        strip_path: false
 
       - name: agency-internal
         paths:
           - /agency-internal
-        strip_path: true
+        strip_path: false
         plugins:
           - name: key-auth
 
@@ -150,28 +194,42 @@ services:
           - /offer-service
         strip_path: true
         plugins:
+
+          - name: cors
+            config:
+              origins:
+                - http://localhost:4200      # dominio Angular
+              methods:
+                - GET
+                - POST
+                - PUT
+                - PATCH
+                - DELETE
+                - OPTIONS
+              headers:
+                - Authorization
+                - Content-Type
+                - Accept
+                - Origin
+              exposed_headers:
+                - Authorization
+              credentials: true
+              max_age: 3600
           - name: jwt
             config:
-              claims_to_verify: [exp]
               key_claim_name: iss
-              run_on_preflight: false
-          - name: request-transformer
-            config:
-              add:
-                headers:
-                  - "X-User-authId:{{jwt_claim_authId}}"
-                  - "X-User-userId:{{jwt_claim_userId}}"
-                  - "X-User-role:{{jwt_claim_role}}"
+              claims_to_verify: [exp]
+          - name: custom-jwt-headers
 
       - name: offer-public
         paths:
           - /offer-public
-        strip_path: true
+        strip_path: false
 
       - name: offer-internal
         paths:
           - /offer-internal
-        strip_path: true
+        strip_path: false
         plugins:
           - name: key-auth
 

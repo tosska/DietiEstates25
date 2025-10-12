@@ -55,7 +55,7 @@ customerRouter.delete('/customers/:id', verifyAuth, async (req, res) => {
     }
 });
 
-customerRouter.get('/intern/customer/:id/businessId', async (req, res) => {
+customerRouter.get('/customer-internal/customer/:id/businessId', async (req, res) => {
     try {
         const customerId = await CustomerController.getCustomerId(req);
         res.status(200).json(customerId); 

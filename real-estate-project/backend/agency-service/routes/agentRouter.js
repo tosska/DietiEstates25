@@ -33,7 +33,7 @@ agentRouter.get('/agent/:id/agencyId', async (req, res)  => {
     }
 })
 
-agentRouter.get("/agent/:id/businessId", internalOnly, (req, res, next) => {
+agentRouter.get("/agency-internal/agent/:id/businessId", (req, res, next) => {
   console.log("sono arrivato")
     AgentController.getAgentId(req).then(agentId => {
       res.json(agentId);

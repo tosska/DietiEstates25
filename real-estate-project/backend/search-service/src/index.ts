@@ -64,13 +64,16 @@ app.listen(PORT);
 //da sistemare
 async function bootstrap() {
 
+  let listingSearchEngine: SearchEngine<Listing>;
+  try{
+    listingSearchEngine= await MeiliSearchEngine.create(
+      process.env.SEARCH_ENGINE_URL as string, 
+      undefined,
+      'listings', 
+      'id'
+    );
 
-  const listingSearchEngine: SearchEngine<Listing> = await MeiliSearchEngine.create(
-    'http://localhost:7700', 
-    undefined,
-    'listings', 
-    'id'
-  );
+
   //probabilmente si dovrebbe fare un singleton
   SearchController.listingSearchEngine = listingSearchEngine;
 
@@ -92,8 +95,16 @@ async function bootstrap() {
     'country'
   ]);
 
+
+  } catch(error){
+    console.log("Errore connessione al motore di ricerca:", error);
+  }
+
+
+
+
   try{
-        // Istanzia la coda RabbitMQ per Listing
+    // Istanzia la coda RabbitMQ per Listing
     const messageQueue = new MessageQueueRabbit<Listing>('amqp://localhost');
     await messageQueue.connect();
 
