@@ -1,6 +1,6 @@
 import express from "express";
 import { CustomerController } from "../controllers/CustomerController.js";
-import { verifyAuth } from "../middleware/authMiddleware.js";
+import { userContextMiddleware } from "../middleware/authMiddleware.js";
 
 export const customerRouter = express.Router();
 
@@ -15,7 +15,7 @@ customerRouter.post('/customers', async (req, res) => {
 });
 
 // Read: Ottieni tutti i customer (richiede autenticazione)
-customerRouter.get('/customers', verifyAuth, async (req, res) => {
+customerRouter.get('/customers', userContextMiddleware, async (req, res) => {
     try {
         const customers = await CustomerController.getAllCustomers(req, res);
         res.status(200).json(customers);
@@ -25,18 +25,19 @@ customerRouter.get('/customers', verifyAuth, async (req, res) => {
 });
 
 // Read: Ottieni un customer per ID (richiede autenticazione)
-customerRouter.get('/customer/:id', verifyAuth, async (req, res) => {
+customerRouter.get('/customer/:id', userContextMiddleware, async (req, res) => {
     try {
         const customerId = req.params.id;
         const customer = await CustomerController.getCustomerById(customerId);
         res.status(200).json(customer);
     } catch (error) {
+        console.log(error);
         res.status(404).json({ message: error.message });
     }
 });
 
 // Update: Aggiorna un customer (richiede autenticazione)
-customerRouter.put('/customers/:id', verifyAuth, async (req, res) => {
+customerRouter.put('/customers/:id', userContextMiddleware, async (req, res) => {
     try {
         const result = await CustomerController.updateCustomer(req, res);
         res.status(200).json(result);
@@ -46,7 +47,7 @@ customerRouter.put('/customers/:id', verifyAuth, async (req, res) => {
 });
 
 // Delete: Elimina un customer (richiede autenticazione)
-customerRouter.delete('/customers/:id', verifyAuth, async (req, res) => {
+customerRouter.delete('/customers/:id', userContextMiddleware, async (req, res) => {
     try {
         const result = await CustomerController.deleteCustomer(req, res);
         res.status(200).json(result);

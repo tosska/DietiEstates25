@@ -17,6 +17,7 @@ export const authenticationRouter = express.Router();
               res.status(401).json({ error: "Invalid credentials. Try again." });
           }
       } catch (error) {
+        console.log(error);
           res.status(500).json({ error: error.message });
       }
   });
