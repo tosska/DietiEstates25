@@ -43,7 +43,7 @@ export function createAddressModel(database) {
             type: DataTypes.FLOAT,
             allowNull: true
         },
-    }, {
+    }, { timestamps: false }, {
         indexes: [
             {
                 unique: true,

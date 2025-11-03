@@ -25,8 +25,8 @@ export const { Address } = database.models;
 // Relazioni
 Agent.belongsTo(Agency, { foreignKey: 'agencyId' });
 Agent.belongsTo(Admin, { foreignKey: 'creatorAdminId' });
-Agency.belongsTo(Admin, { foreignKey: 'ManagerAdmin_ID', as: 'ManagerAdmin' });
-Agency.belongsTo(Address, { foreignKey: 'Address_ID' });
+Agency.belongsTo(Admin, { foreignKey: 'managerAdminId', as: 'ManagerAdmin' });
+Agency.belongsTo(Address, { foreignKey: 'addressId' });
 
 // Sincronizzazione del database
 database.sync()

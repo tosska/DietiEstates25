@@ -20,16 +20,16 @@ export class AuthController {
             return null;
         } 
 
-        console.log('Credenziali trovate:', { ID: credentials.ID, role: credentials.role });
+        console.log('Credenziali trovate:', { id: credentials.id, role: credentials.role });
 
-        const businessId = await AuthService.getBusinessId(credentials.ID, credentials.role);
+        const businessId = await AuthService.getBusinessId(credentials.id, credentials.role);
         if(!businessId) {
             throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
         }
 
-        console.log("token pre ", {authId: credentials.ID, userId: businessId, role: credentials.role });
+        console.log("token pre ", {authId: credentials.id, userId: businessId, role: credentials.role });
         
-        return {authId: credentials.ID, userId: businessId, role: credentials.role };
+        return {authId: credentials.id, userId: businessId, role: credentials.role };
     }
 
 
@@ -141,7 +141,7 @@ export class AuthController {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                credentialsId: newCredentials.ID,
+                credentialsId: newCredentials.id,
                 name: name || 'Nuovo',
                 surname: surname || 'Cliente',
                 phone: phone || null,
@@ -156,7 +156,7 @@ export class AuthController {
             throw new Error(errorData.message || 'Errore durante la creazione del customer');
         }
 
-        return { userId: newCredentials.ID, role: 'customer', token: Jwt.sign({ userId: newCredentials.ID, role: 'customer' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
+        return { userId: newCredentials.id, role: 'customer', token: Jwt.sign({ userId: newCredentials.id, role: 'customer' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
     }
 
     static async registerAgent(req, res) {
