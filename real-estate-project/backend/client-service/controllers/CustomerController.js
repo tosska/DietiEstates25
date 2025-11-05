@@ -37,6 +37,15 @@ export class CustomerController {
         return customer;
     }
 
+    static async getCustomersByIds(customerIds) {
+        const customers = await Customer.findAll({
+            where: {
+                id: customerIds
+            }});
+
+        return customers;
+    }
+
     static async updateCustomer(req, res) {
         let responseSent = false;
 

@@ -12,6 +12,7 @@ export class AuthController {
         }
 
         const hashedPwd = createHash('sha256').update(pwd).digest('hex');
+        console.log(hashedPwd);
         const credentials = await Credentials.findOne({
             where: { email: usr, password: hashedPwd },
         });

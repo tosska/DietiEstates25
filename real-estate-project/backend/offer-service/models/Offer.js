@@ -31,6 +31,7 @@ export function createOfferModel(database) {
         counteroffer: {
             type: DataTypes.BOOLEAN, // Eventuale controfferta monetaria
             allowNull: true,
+            defaultValue: false
         },
         customer_id:{
             type: DataTypes.INTEGER,

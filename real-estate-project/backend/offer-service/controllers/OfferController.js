@@ -1,3 +1,5 @@
+import { CustomerClient } from "../clients/CustomerClient.js";
+import { ListingClient } from "../clients/ListingClient.js";
 import {Offer} from "../models/Database.js";
 import { OfferService } from "../services/OfferService.js";
 
@@ -27,7 +29,7 @@ export class OfferController {
         return offer;
     }
 
-    static async respondToOffer(offerId, offerResponse) {
+    static async respondToOffer(offerId, offerResponse, token) {
         let offer = await Offer.findByPk(offerId);
         if (!offer) throw new Error('Offer not found');
         if (offer.status !== "Pending") throw new Error('This offer has already been responded to');
@@ -36,7 +38,8 @@ export class OfferController {
         }
         await Offer.update({ status: offerResponse }, { where: { id: offer.id } });
         if (offerResponse === 'Accepted') {
-            OfferService.setAllOffersRejectedForListing(offer.listing_id);
+            await OfferService.setAllOffersRejectedForListing(offer.listing_id);
+            ListingClient.closeListing(offer.listing_id, token);
         }
         return offer;
     }
@@ -59,10 +62,33 @@ export class OfferController {
         } else if (userRole === "agent") {
             whereClause = { listing_id: listingId, agent_id: userId };
         }
-        return Offer.findAll({
+
+        let offers = await Offer.findAll({
             where: whereClause,
-            order: [['offer_Date', 'ASC']]
+            order: [['offer_Date', 'DESC']],
+            raw: true
         });
+
+        const customerIds = offers.map(o => o.customer_id);
+
+        let customers = await CustomerClient.getCustomersByIds(customerIds);
+
+        for (const offer of offers) {
+            // Trova il cliente corrispondente cercando per ID
+            const customer = customers.find(c => c.id === offer.customer_id);
+
+            // Aggiungilo all'offerta (se trovato)
+            if (customer) {
+                offer.customer = customer;
+            } else {
+                offer.customer = null; // nel caso non venga trovato
+            }
+        }
+
+        console.log("Offer history with customer details:", offers);
+    
+        return offers;
+
     }
 
     static async getActiveOffersByAgent(agentId) {
@@ -79,7 +105,8 @@ export class OfferController {
         return Offer.count({
             where: {
                 agent_id: agentId,
-                status: "Pending"
+                status: "Pending",
+                counteroffer: false
             },
             group: ['listing_id']
         });
@@ -89,7 +116,8 @@ export class OfferController {
         return Offer.findAll({
             where: {
                 listing_id: listingId,
-                status: "Pending"
+                status: "Pending",
+                counteroffer: false
             },
             order: [['offer_Date', 'ASC']]
         });

@@ -160,6 +160,13 @@ export class ListingController {
     }
 
 
+    static async getListingsForAgent(req){
+        return Listing.findAll({
+            where: { agentId: req.userId},
+            include: [Address, Photo]
+        });
+    }
+
     static async getActiveListingsForAgent(req){
 
         return Listing.findAll({
@@ -167,6 +174,16 @@ export class ListingController {
             include: [Address, Photo]
         });
     }
+
+    static async getClosedListingsForAgent(req){
+
+        return Listing.findAll({
+            where: { status: 'Closed', agentId: req.userId},
+            include: [Address, Photo]
+        });
+    }
+
+
 
     static async getLatestListings(req){
         const limit = parseInt(req.query.limit) || 4; // Numero massimo di annunci da restituire, default 4

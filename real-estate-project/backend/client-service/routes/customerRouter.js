@@ -36,6 +36,16 @@ customerRouter.get('/customer/:id', userContextMiddleware, async (req, res) => {
     }
 });
 
+customerRouter.post("/customer-internal/customers/by-ids", (req, res, next) => {
+    const { customerIds } = req.body;
+    CustomerController.getCustomersByIds(customerIds).then(customers => {
+      res.json(customers);
+    }).catch(err => {
+      next(err);
+    });
+});
+
+
 // Update: Aggiorna un customer (richiede autenticazione)
 customerRouter.put('/customers/:id', userContextMiddleware, async (req, res) => {
     try {

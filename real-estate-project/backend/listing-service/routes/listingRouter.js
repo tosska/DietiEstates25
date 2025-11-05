@@ -17,6 +17,7 @@ listingRouter.get("/listing-public/listing/:listingId",(req, res, next) => {
     });
 });
 
+
 //goal: recupero listing multipli a partire da un arrat di listingId
 listingRouter.post("/listings/by-ids", (req, res, next) => {
     ListingController.getListingsByIds(req).then(listings => {
@@ -63,8 +64,29 @@ listingRouter.put("/listing/:listingId/closing", userContextMiddleware, enforceA
     });
 });
 
+
+//AGENT ROUTES
+listingRouter.get("/agent/listings", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
+    ListingController.getListingsForAgent(req).then(listings => {
+      res.status(200).json(listings);
+    }).catch(err => {
+      next(err);
+      console.log(err.message);
+    });
+});
+
 listingRouter.get("/agent/listings/active", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
     ListingController.getActiveListingsForAgent(req).then(listings => {
+      res.status(200).json(listings);
+    }).catch(err => {
+      next(err);
+      console.log(err.message);
+    });
+});
+
+
+listingRouter.get("/agent/listings/closed", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
+    ListingController.getClosedListingsForAgent(req).then(listings => {
       res.status(200).json(listings);
     }).catch(err => {
       next(err);

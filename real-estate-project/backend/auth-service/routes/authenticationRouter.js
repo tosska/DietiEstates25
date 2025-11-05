@@ -7,6 +7,7 @@ export const authenticationRouter = express.Router();
 
   authenticationRouter.post("/login", async (req, res) => {
       try {
+      
           const credentials = await AuthController.checkCredentials(req);
           if (credentials) {
               const {authId, userId, role } = credentials;
@@ -14,6 +15,7 @@ export const authenticationRouter = express.Router();
               res.json(AuthController.issueToken(authId, userId, role));
               console.log("token generato")
           } else {
+              console.log("Credenziali non valide");
               res.status(401).json({ error: "Invalid credentials. Try again." });
           }
       } catch (error) {

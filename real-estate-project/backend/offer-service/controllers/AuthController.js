@@ -28,9 +28,9 @@ export class AuthController {
         }
 
         if(userRole == "customer"){
-            return offer.customer_id === userId && offer.counteroffer;
+            return offer.customer_id == userId && offer.counteroffer;
         }else if(userRole == "agent"){
-            return offer.agent_id === userId && !offer.counteroffer;
+            return (offer.agent_id == userId && !offer.counteroffer);
         }
 
         return false;

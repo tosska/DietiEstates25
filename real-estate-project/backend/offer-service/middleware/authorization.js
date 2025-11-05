@@ -1,52 +1,45 @@
 
 import { AuthController } from "../controllers/AuthController.js";
 import { OfferController } from "../controllers/OfferController.js";
+import { AuthClient } from "../clients/AuthClient.js";
 
-export function enforceAuthentication(req, res, next) {
+
+export async function userContextMiddleware(req, res, next) {
+
+    const authId = req.headers['x-user-authid'];
+    const userId = req.headers["x-user-userid"];
+    const role = req.headers['x-user-role'];
     const authHeader = req.headers['authorization']
     const token = authHeader?.split(' ')[1];
-    if (!token) {
+    
+    if(!authId || !userId || !role) {  
         next({status: 401, message: "Unauthorized"});
         return;
     }
 
-    isTokenValid(token)
-        .then(data => {
-            req.userId = data.id;
-            req.userRole = data.role;
-            next();
-        })
-        .catch(((err) => {
-            next({ status: 401, message: err.message });
-        })
-        );
+    try {
+        await AuthClient.checkUser(authId);
+    }
+    catch(error) {
+        next({status: 401, message: "Unauthorized"})
+    }
+
+    req.token = token;
+    req.authId = authId;
+    req.userId = userId;
+    req.role = role;
+
+    next();
 }
 
 
-async function isTokenValid(token) {
-
-    const response = await fetch('http://localhost:3004/verify-token', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-        return data;
-    } else {
-        throw Error(data.error);
-    }
-    
-} 
-
 export async function restrictOfferAccess(req, res, next) {
 
+    
+    console.log(req.params.offerId, req.userId, req.role);
+    const response = await AuthController.canUserAccessOffer(req.params.offerId, req.userId, req.role);
 
-    const response = await AuthController.canUserAccessOffer(req.params.offerId, req.userId, req.userRole);
+    console.log("response:", response);
     
     if(response){
         next();
@@ -61,7 +54,7 @@ export async function restrictOfferAccess(req, res, next) {
 
 export function enforceAuthenticationByAgent(req, res, next) {
 
-    if(req.userRole == "agent"){
+    if(req.role == "agent"){
         next();
     } else {
         next({
@@ -73,7 +66,7 @@ export function enforceAuthenticationByAgent(req, res, next) {
 
 export function enforceAuthenticationByCustomer(req, res, next) {
 
-    if(req.userRole == "customer"){
+    if(req.role == "customer"){
         next();
     } else {
         next({
@@ -89,7 +82,7 @@ export function enforceAuthenticationByCustomer(req, res, next) {
 export async function enforceOfferAuthenticationByAgent(req, res, next) {
     const agentId = req.params.agentId;
 
-    if(agentId == req.userId && req.userRole == "agent"){
+    if(agentId == req.userId && req.role == "agent"){
         next();
     } else {
         next({
@@ -100,12 +93,12 @@ export async function enforceOfferAuthenticationByAgent(req, res, next) {
 }
 
 
-//perchè asincrono?
+
 export async function enforceOfferAuthenticationByCustomer(req, res, next) {
     
 
-    console.log(req.user_role);
-    const response = await AuthController.canUserModifyOffer(req.params.offerId, req.userId, req.userRole)
+    console.log(req.role);
+    const response = await AuthController.canUserModifyOffer(req.params.offerId, req.userId, req.role)
 
 
     if(response){
