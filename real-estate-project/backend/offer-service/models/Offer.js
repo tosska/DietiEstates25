@@ -33,6 +33,10 @@ export function createOfferModel(database) {
             allowNull: true,
             defaultValue: false
         },
+        externalName: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         customer_id:{
             type: DataTypes.INTEGER,
             allowNull: false

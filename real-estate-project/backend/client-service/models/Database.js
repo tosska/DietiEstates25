@@ -13,6 +13,20 @@ createCustomerModel(database);
 // Esporta i modelli
 export const { Customer } = database.models;
 
+if(!Customer.findByPk(0)){
+    console.log("Creazione customer esterno di default con ID 0");
+    let externalCustomer = {
+        id: 0, 
+        name: "External",
+        surname: "Customer",
+        registrationDate: new Date(0),
+        phone: "N/A",
+        credentialsId: 0
+    };
+    externalCustomer = Customer.build(externalCustomer);
+    externalCustomer.save();
+}
+
 // Sincronizzazione del database
 database.sync()
     .then(() => {

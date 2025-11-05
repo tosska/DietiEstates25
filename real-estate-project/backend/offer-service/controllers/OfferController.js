@@ -12,7 +12,7 @@ export class OfferController {
 
     static async createOffer(offerData) {
         let offer = Offer.build(offerData);
-        offer.status = 'Pending';
+        offer.status = offerData?.status || "Pending";
         offer.offerDate = new Date();
         return offer.save();
     }

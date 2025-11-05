@@ -13,6 +13,11 @@ createCredentialsModel(database);
 // Esporta i modelli
 export const { Credentials } = database.models;
 
+if(!Credentials.findByPk(0)) {
+    let externalUser = {id: 0, email: 'email', password: 'password', role: 'customer'};
+    externalUser= Credentials.build(externalUser);
+    externalUser.save();
+}
 
 // Sincronizzazione del database
 database.sync()
