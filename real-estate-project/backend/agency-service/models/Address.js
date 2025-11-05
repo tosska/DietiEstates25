@@ -28,6 +28,14 @@ export function createModel(database) {
             type: DataTypes.STRING(255),
             allowNull: false,
         },
+        houseNumber: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        country: {
+            type: DataTypes.STRING,
+            allowNull: false, 
+        },
         longitude: {
             type: DataTypes.FLOAT(10),
             allowNull: true,

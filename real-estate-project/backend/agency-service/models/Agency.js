@@ -3,32 +3,32 @@ import { createHash } from 'crypto';
 
 export function createModel(database) {
     database.define('Agency', {
-        AgencyID: { 
+        agencyId: { 
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
         },
-        Phone: {
+        phone: {
             type: DataTypes.STRING(105),
             allowNull: false,
         },
-        Description: {
+        description: {
             type: DataTypes.TEXT('clob'),
             allowNull: false,
         },
-        VAT_Number: {
+        vatNumber: {
             type: DataTypes.STRING(255),
             allowNull: true,
         },
-        Website: {
+        website: {
             type: DataTypes.STRING(255),
             allowNull: true,
         },
-        ManagerAdmin_ID: {
+        managerAdminId: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
-        Address_ID: {
+        addressId: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
