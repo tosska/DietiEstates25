@@ -9,6 +9,7 @@ import { Listing } from "./types/Listing.js";
 import { MeiliSearchEngine } from "./models/MeiliListingSearchEngine.js";
 import { SearchController } from "./controllers/SearchController.js";
 import { MessageQueueRabbit } from "./models/MessageQueueRabbit.js";
+import 'dotenv/config.js';  // Legge il file .env e lo rende disponibile in process.env
 
 
 const app = express(); // creates an express application
@@ -65,6 +66,7 @@ app.listen(PORT);
 async function bootstrap() {
 
   let listingSearchEngine: SearchEngine<Listing>;
+  
   try{
     listingSearchEngine= await MeiliSearchEngine.create(
       process.env.SEARCH_ENGINE_URL as string, 
@@ -108,7 +110,7 @@ async function bootstrap() {
     const messageQueue = new MessageQueueRabbit<Listing>('amqp://localhost');
     await messageQueue.connect();
 
-    await messageQueue.consume('listing_created', async (listing: Listing) => {
+    messageQueue.consume('listing_created', async (listing: Listing) => {
       console.log('Listing created:', listing);
       await listingSearchEngine.addItemToIndex(listing);
     });

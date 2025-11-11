@@ -13,6 +13,7 @@ export class AgencyClient {
                 { headers: { 'apikey': process.env.INTERNAL_API_KEY } }
             );
 
+            console.log("Agency ID fetched:", response.data.agencyId);
             return response.data.agencyId;
         } catch (error) {
             console.error('Errore in getAgencyIdByAgentId:', error?.response?.data || error.message);

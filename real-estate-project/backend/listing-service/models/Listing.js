@@ -72,7 +72,7 @@ export function createListingModel(database) {
             },
             
         }
-    }, {
+    }, {timestamps: false
 
     })
 }

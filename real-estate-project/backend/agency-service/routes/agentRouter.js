@@ -23,7 +23,7 @@ agentRouter.get('/agent/:id', async (req, res) => {
     }
 })
 
-agentRouter.get('/agent/:id/agencyId', async (req, res)  => {
+agentRouter.get('/agency-internal/agent/:id/agencyId', async (req, res)  => {
     try {
       const agentId = req.params.id;
       const agencyId = await AgentController.getAgencyIdByAgentId(agentId);

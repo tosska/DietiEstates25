@@ -12,7 +12,7 @@ app.use(morgan('dev'));
 
 app.use(cors()); 
 
-//ListingPublisher.init();
+ListingPublisher.init();
 
 // Parse incoming requests with a JSON payload
 app.use(express.json());

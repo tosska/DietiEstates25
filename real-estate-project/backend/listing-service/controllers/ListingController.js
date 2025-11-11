@@ -63,13 +63,14 @@ export class ListingController {
             { transaction }
         );
 
-        await PhotoService.savePhotos(listingDB.id, req.files);
+        let listingPhotos = await PhotoService.savePhotos(listingDB.id, req.files, transaction);
+        console.log("Photos saved for listing:", listingPhotos);
 
         await transaction.commit();
         
         //Rimuovo id da address in modo che non crei conflitto sul motore di ricerca (da spostare nel microservizio di ricerca)
         const {id, ...addressWithoutId} = addressDB.dataValues;
-        const listingToPublish = {...listingDB.dataValues, ...addressWithoutId}
+        const listingToPublish = {...listingDB.dataValues, ...addressWithoutId, mainPhoto: listingPhotos[0] || null};
         ListingPublisher.publishCreated(listingToPublish);
 
         return listingDB;
