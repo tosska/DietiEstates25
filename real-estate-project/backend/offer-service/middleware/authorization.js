@@ -6,6 +6,7 @@ import { AuthClient } from "../clients/AuthClient.js";
 
 export async function userContextMiddleware(req, res, next) {
 
+
     const authId = req.headers['x-user-authid'];
     const userId = req.headers["x-user-userid"];
     const role = req.headers['x-user-role'];

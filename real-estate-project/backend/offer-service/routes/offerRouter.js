@@ -62,9 +62,22 @@ offerRouter.get("/offers/pending/count-by-listing", userContextMiddleware, enfor
         .catch(next);
 });
 
-// Storico offerte per annuncio
-offerRouter.get("/offers/history/listing/:listingId", userContextMiddleware, (req, res, next) => {
-    OfferController.getOfferHistoryForListing(req.params.listingId, req.role, req.userId)
+// Storico offerte per annuncio (agente)
+offerRouter.get("/agent/offers/history/listing/:listingId", userContextMiddleware, (req, res, next) => {
+    OfferController.getOfferHistoryForListingByAgent(req.params.listingId, req.userId)
         .then(offerItems => res.json(offerItems))
+        .catch(next);
+});
+
+// Storico offerte per annuncio (customer)
+offerRouter.get("/customer/offers/history/listing/:listingId", userContextMiddleware, (req, res, next) => {
+    OfferController.getOfferHistoryForListingByCustomer(req.params.listingId, req.userId)
+        .then(offerItems => res.json(offerItems))
+        .catch(next);
+});
+
+offerRouter.get("/offers/pending/listing-ids", userContextMiddleware, (req, res, next) => {
+    OfferController.getListingIdFromPendingOffer(req.userId)
+        .then(listingIds => res.json(listingIds))
         .catch(next);
 });

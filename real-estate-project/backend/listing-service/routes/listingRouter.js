@@ -103,15 +103,13 @@ listingRouter.get("/listing-public/listings/latest", (req, res, next) => {
     });
 });
 
-
-
-//da cancellare (test)
-listingRouter.post("/verify-token", (req, res, next) => {
-    //Jwt.verify(token, process.env.TOKEN_SECRET, callback);
-    console.log("ho ricevuto una chiamata");
-    let data = { id: 2, role: "agent" };
-    res.json(data);
-    //return res.status(401).json({ error: "Invalid token"})
+listingRouter.get("/customers/me/listings/offered", userContextMiddleware, (req, res, next) => {
+    ListingController.getListingsOfferedByCustomer(req).then(listings => {
+      res.status(200).json(listings);
+    }).catch(err => {
+      next(err);
+      console.log(err.message);
+    });
 });
 
 

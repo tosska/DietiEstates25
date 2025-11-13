@@ -1,4 +1,5 @@
 import { AgencyClient } from "../clients/AgencyClient.js";
+import { OfferClient } from "../clients/OfferClient.js";
 import {Listing, Address, Photo, database} from "../models/Database.js";
 import { ListingPublisher } from "../models/ListingPublisher.js";
 import { PhotoService } from "../services/PhotoService.js";
@@ -184,7 +185,16 @@ export class ListingController {
         });
     }
 
+    static async getListingsOfferedByCustomer(req) {
 
+        console.log("Fetching listings offered by customer with token:", req.token);
+        const listingIds = await OfferClient.getListingIdFromPendingOffer(req.token);
+
+        return Listing.findAll({
+            where: { id: listingIds },
+            include: [Address, Photo],
+        });
+    }
 
     static async getLatestListings(req){
         const limit = parseInt(req.query.limit) || 4; // Numero massimo di annunci da restituire, default 4

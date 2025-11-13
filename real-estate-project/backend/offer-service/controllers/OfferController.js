@@ -55,16 +55,10 @@ export class OfferController {
         this.createOffer(counterOfferData);
     }
 
-    static async getOfferHistoryForListing(listingId, userRole, userId) {
-        let whereClause = {};
-        if (userRole === "customer") {
-            whereClause = { listing_id: listingId, customer_id: userId };
-        } else if (userRole === "agent") {
-            whereClause = { listing_id: listingId, agent_id: userId };
-        }
-
+    static async getOfferHistoryForListingByAgent(listingId, userId) {
+     
         let offers = await Offer.findAll({
-            where: whereClause,
+            where: { listing_id: listingId, agent_id: userId },
             order: [['offer_Date', 'DESC']],
             raw: true
         });
@@ -91,6 +85,15 @@ export class OfferController {
 
     }
 
+    static async getOfferHistoryForListingByCustomer(listingId, customerId) {
+
+        return Offer.findAll({
+            where: { listing_id: listingId, customer_id: customerId },
+            order: [['offer_Date', 'ASC']]
+        });
+
+    }
+
     static async getActiveOffersByAgent(agentId) {
         return Offer.findAll({
             where: {
@@ -99,6 +102,30 @@ export class OfferController {
             },
             order: [['listing_id', 'ASC'], ['offer_Date', 'ASC']]
         });
+    }
+
+    static async getListingIdFromPendingOffer(userId, role) {
+
+        let whereClause;
+        
+        if(role === "agent"){
+            whereClause = {
+                agent_id: userId,
+                status: "Pending"
+            };
+        } else if(role === "customer"){
+            whereClause = {
+                customer_id: userId,
+                status: "Pending"
+            };
+        }
+
+        let listingIds = await Offer.findAll({
+            where: whereClause,
+            attributes: ['listing_id'],
+            group: ['listing_id']
+        });
+        return listingIds.map(offer => offer.listing_id);
     }
 
     static async getCountOfPendingOffersGroupListing(agentId) {
@@ -122,4 +149,6 @@ export class OfferController {
             order: [['offer_Date', 'ASC']]
         });
     }
+
+    
 }
