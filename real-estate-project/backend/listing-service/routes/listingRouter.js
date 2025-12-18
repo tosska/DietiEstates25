@@ -103,14 +103,24 @@ listingRouter.get("/listing-public/listings/latest", (req, res, next) => {
     });
 });
 
-listingRouter.get("/customers/me/listings/offered", userContextMiddleware, (req, res, next) => {
-    ListingController.getListingsOfferedByCustomer(req).then(listings => {
+listingRouter.get("/customers/me/listings/active/offered", userContextMiddleware, (req, res, next) => {
+    ListingController.getActiveListingsOfferedByCustomer(req).then(listings => {
       res.status(200).json(listings);
     }).catch(err => {
       next(err);
       console.log(err.message);
     });
 });
+
+listingRouter.get("/customers/me/listings/closed/offered", userContextMiddleware, (req, res, next) => {
+    ListingController.getActiveListingsOfferedByCustomer(req).then(listings => {
+      res.status(200).json(listings);
+    }).catch(err => {
+      next(err);
+      console.log(err.message);
+    });
+});
+
 
 
 

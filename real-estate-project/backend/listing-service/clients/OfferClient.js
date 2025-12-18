@@ -5,12 +5,12 @@ export class OfferClient {
     static api_gateway_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/offer-service';
     static api_gateway_internal_url = process.env.API_GATEWAY_INTERNAL_URL || 'http://localhost:8000/offer-internal';
     
-    static async getListingIdFromPendingOffer(token){
+    static async getListingIdFromOffers(token){
 
 
          try {
             const response = await axios.get(
-                `${this.api_gateway_url}/offers/pending/listing-ids`,
+                `${this.api_gateway_url}/offers/all/listing-ids`,
                 { headers: { Authorization: 'Bearer ' + token } } 
             );
             return response.data;

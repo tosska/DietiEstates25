@@ -30,7 +30,7 @@ offerRouter.get("/offers/active", userContextMiddleware, enforceAuthenticationBy
 
 // Creazione offerta
 offerRouter.post("/offer", userContextMiddleware, (req, res, next) => {
-    OfferController.createOffer(req.body)
+    OfferController.createOffer(req.body, req.userId, req.role)
         .then(offerItem => res.status(201).json(offerItem.id))
         .catch(next);
 });
@@ -43,7 +43,7 @@ offerRouter.put("/offer/:offerId/response", userContextMiddleware, restrictOffer
 });
 
 offerRouter.post("/offer/:offerId/counteroffer", userContextMiddleware, restrictOfferAccess, (req, res, next) => {
-    OfferController.createCounteroffer(req.params.offerId, req.body)
+    OfferController.createCounteroffer(req.params.offerId, req.body, req.role)
         .then(() => res.status(201).json({ message: 'Counteroffer created successfully' }))
         .catch(err => console.log(err));
 });
@@ -76,8 +76,8 @@ offerRouter.get("/customer/offers/history/listing/:listingId", userContextMiddle
         .catch(next);
 });
 
-offerRouter.get("/offers/pending/listing-ids", userContextMiddleware, (req, res, next) => {
-    OfferController.getListingIdFromPendingOffer(req.userId)
+offerRouter.get("/offers/all/listing-ids", userContextMiddleware, (req, res, next) => {
+    OfferController.getListingIdFromOffers(req.userId)
         .then(listingIds => res.json(listingIds))
         .catch(next);
 });

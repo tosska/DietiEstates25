@@ -23,3 +23,23 @@ agencyRouter.post('/agency', async (req, res) => {
     }
 });
 
+agencyRouter.get('/agency/:agencyId', async (req, res) => {
+    try {
+        const agency = await AgencyController.getAgencyById(req, res);      
+        res.status(200).json(agency);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }       
+});
+
+agencyRouter.get('/agency/:agencyId/name', async (req, res) => {
+    try {
+        console.log("Received request for agency name with ID:", req.params.agencyId);
+        const agency = await AgencyController.getAgencyNameById(req.params.agencyId);  
+        console.log("Agency name retrieved:", agency.dataValues.name);    
+        res.status(200).json(agency.dataValues.name);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }       
+});
+

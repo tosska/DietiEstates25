@@ -28,8 +28,7 @@ export function createListingModel(database) {
             allowNull: true,
         },
         endPublicationDate:{
-            type: DataTypes.DATE,
-            allowNull: false
+            type: DataTypes.DATE
         },
         description:{
             type: DataTypes.TEXT,

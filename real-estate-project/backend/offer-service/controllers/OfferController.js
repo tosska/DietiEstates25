@@ -10,10 +10,24 @@ export class OfferController {
         return Offer.findByPk(offerId);
     }
 
-    static async createOffer(offerData) {
+    static async createOffer(offerData, userId, role) {
+        let lastestOffer= OfferService.getLatestOfferForCustomerAndListing(offerData.customer_id, offerData.listing_id);
+
+        if(lastestOffer.status === "Pending"){
+            throw new Error("You already have a pending offer for this listing.");
+        }
+
         let offer = Offer.build(offerData);
         offer.status = offerData?.status || "Pending";
         offer.offerDate = new Date();
+
+
+        if(role === "customer"){
+            offer.customer_id = userId;
+        } else if(role === "agent"){
+            offer.agent_id = userId;
+        }
+
         return offer.save();
     }
 
@@ -44,22 +58,28 @@ export class OfferController {
         return offer;
     }
 
-    static async createCounteroffer(offerId, counterOfferData) {
+    static async createCounteroffer(offerId, counterOfferData, role) {
 
         console.log("Creating counteroffer for offer ID:", offerId);
         
-        this.respondToOffer(offerId, 'Rejected');
+        await this.respondToOffer(offerId, 'Rejected');
         
-        counterOfferData.counteroffer = true;
+        if(role === "customer"){
+            counterOfferData.counteroffer = false;
+        } else if(role === "agent"){
+            counterOfferData.counteroffer = true;
+        }
 
-        this.createOffer(counterOfferData);
+        await this.createOffer(counterOfferData);
     }
+
+
 
     static async getOfferHistoryForListingByAgent(listingId, userId) {
      
         let offers = await Offer.findAll({
             where: { listing_id: listingId, agent_id: userId },
-            order: [['offer_Date', 'DESC']],
+            order: [['offerDate', 'DESC']],
             raw: true
         });
 
@@ -89,7 +109,7 @@ export class OfferController {
 
         return Offer.findAll({
             where: { listing_id: listingId, customer_id: customerId },
-            order: [['offer_Date', 'ASC']]
+            order: [['offerDate', 'ASC']]
         });
 
     }
@@ -100,23 +120,21 @@ export class OfferController {
                 agent_id: agentId,
                 status: "Pending"
             },
-            order: [['listing_id', 'ASC'], ['offer_Date', 'ASC']]
+            order: [['listing_id', 'ASC'], ['offerDate', 'ASC']]
         });
     }
 
-    static async getListingIdFromPendingOffer(userId, role) {
+    static async getListingIdFromOffers(userId, role) {
 
         let whereClause;
         
         if(role === "agent"){
             whereClause = {
                 agent_id: userId,
-                status: "Pending"
             };
         } else if(role === "customer"){
             whereClause = {
                 customer_id: userId,
-                status: "Pending"
             };
         }
 
@@ -146,7 +164,7 @@ export class OfferController {
                 status: "Pending",
                 counteroffer: false
             },
-            order: [['offer_Date', 'ASC']]
+            order: [['offerDate', 'ASC']]
         });
     }
 

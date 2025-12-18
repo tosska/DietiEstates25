@@ -19,7 +19,7 @@ export function createOfferModel(database) {
             type: DataTypes.ENUM('Accepted', 'Rejected', 'Pending'),
             allowNull: false
         },
-        offer_Date: {
+        offerDate: {
             type: DataTypes.DATE,
             allowNull: false,
             defaultValue: DataTypes.NOW

@@ -20,5 +20,15 @@ export class OfferService {
 
     }
 
+    static getLatestOfferForCustomerAndListing(customerId, listingId) {
+        return Offer.findOne({
+            where: {
+                customer_id: customerId,
+                listing_id: listingId
+            },
+            order: [['offerDate', 'DESC']]
+        });
+    }
+
 
 }
