@@ -1,0 +1,14 @@
+{
+  "name": "microservices-monorepo",
+  "version": "1.0.0",
+  "scripts": {
+    "start:all": "concurrently -n \"agency,auth,client,listing,offer,search\" -c \"bgBlue,bgMagenta,bgCyan,bgGreen,bgYellow,bgRed\" \"npm start --prefix agency-service\" \"npm start --prefix auth-service\" \"npm start --prefix client-service\" \"npm start --prefix listing-service\" \"npm start --prefix offer-service\" \"npm run dev --prefix search-service\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
