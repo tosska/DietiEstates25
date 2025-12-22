@@ -275,7 +275,7 @@ export class AuthController {
             'Authorization': req.headers.authorization,
         },
         body: JSON.stringify({
-            credentialsId: newCredentials.ID,
+            credentialsId: newCredentials.id,
             agencyId: agencyId || null,
             manager: true, // Imposta Manager a true
         }),
@@ -288,27 +288,29 @@ export class AuthController {
         }
 
         const token = Jwt.sign({ userId: newCredentials.ID, role: 'admin' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` });
-        return { userId: newCredentials.ID, role: 'admin', token };
+        return { userId: newCredentials.id, role: 'admin', token };
     }
 
     static async registerCompany(req, res) {
-        const { email, password, phone, description, vatNumber, website, street, city, postalCode, state, unitDetail, longitude, latitude } = req.body;
+        const { email, password, phone, description, vatNumber, website, street,  houseNumber, city, postalCode, state, country, unitDetail, longitude, latitude } = req.body;
 
         try {
             console.log('Invio richiesta a agency-service:', {
-            email,
+            email, 
             password,
             phone,
             description,
             vatNumber,
             website,
             street,
+            houseNumber,
             city,
             postalCode,
             state,
+            country,
             unitDetail,
             longitude,
-            latitude,
+            latitude
             });
 
             const response = await fetch('http://localhost:3000/agency', { // Corretto il percorso a /api/agency/agency
@@ -317,19 +319,21 @@ export class AuthController {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                email,
+                email, 
                 password,
                 phone,
                 description,
                 vatNumber,
                 website,
                 street,
+                houseNumber,
                 city,
                 postalCode,
                 state,
+                country,
                 unitDetail,
                 longitude,
-                latitude,
+                latitude
             }),
             });
 

@@ -30,9 +30,9 @@ export class AdminController {
         }
 
         const admin = await Admin.create({
-            CredentialsID: credentialsId,
-            Agency_ID: agencyId || null,
-            Manager: true,
+            credentialsId: credentialsId,
+            agencyId: agencyId || null,
+            manager: true,
             role: 'admin',
         });
 

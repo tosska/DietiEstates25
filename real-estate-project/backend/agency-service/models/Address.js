@@ -20,10 +20,6 @@ export function createModel(database) {
             type: DataTypes.STRING(255),
             allowNull: false,
         },
-        state: {
-            type: DataTypes.STRING(255),
-            allowNull: false,
-        },
         unitDetail: {
             type: DataTypes.STRING(255),
             allowNull: false,
