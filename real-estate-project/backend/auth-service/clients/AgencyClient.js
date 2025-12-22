@@ -23,9 +23,17 @@ export class AgencyClient {
 
     static async getAdminId(credential_id) {
 
-        return axios.get(`${this.api_gateway_internal_url}/admin/${credential_id}/businessId`
-            , { headers: { 'apikey': process.env.INTERNAL_API_KEY } }
-        )
+        try {
+            const response = await axios.get(
+                `${this.api_gateway_internal_url}/admin/${credential_id}/businessId`,
+                { headers: { 'apikey': process.env.INTERNAL_API_KEY } }
+            );
+                       
+            return response.data.id;
+        } catch (error) {
+            console.error('Errore in getAdminId:', error?.response?.data || error.message);
+            return null;
+        }
 
     }
 

@@ -54,5 +54,15 @@ export class AdminController {
 
         return admin;
     }
+
+    static async getAdminId(req) {
+
+        const credential_id = req.params.id;
+
+        return Admin.findOne({
+            where: { credentialsId: credential_id },
+            attributes: ['id'],
+        });
+    }
     
 }
