@@ -8,6 +8,10 @@ export function createModel(database) {
             primaryKey: true,
             autoIncrement: true,
         },
+        name: {
+            type: DataTypes.STRING(255),
+            allowNull: false,
+        },
         phone: {
             type: DataTypes.STRING(105),
             allowNull: false,
@@ -31,6 +35,6 @@ export function createModel(database) {
         addressId: {
             type: DataTypes.INTEGER,
             allowNull: false,
-        },
+        }
     }, { timestamps: false });
 }

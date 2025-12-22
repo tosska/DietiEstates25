@@ -185,13 +185,24 @@ export class ListingController {
         });
     }
 
-    static async getListingsOfferedByCustomer(req) {
+    static async getActiveListingsOfferedByCustomer(req) {
 
         console.log("Fetching listings offered by customer with token:", req.token);
-        const listingIds = await OfferClient.getListingIdFromPendingOffer(req.token);
+        const listingIds = await OfferClient.getListingIdFromOffers(req.token);
 
         return Listing.findAll({
-            where: { id: listingIds },
+            where: { id: listingIds, status: 'Active' },
+            include: [Address, Photo],
+        });
+    }
+
+    static async getClosedListingsOfferedByCustomer(req) {
+
+        console.log("Fetching listings offered by customer with token:", req.token);
+        const listingIds = await OfferClient.getListingIdFromOffers(req.token);
+
+        return Listing.findAll({
+            where: { id: listingIds, status: 'Closed' },
             include: [Address, Photo],
         });
     }

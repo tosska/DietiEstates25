@@ -101,4 +101,23 @@ export class AgencyController {
         }
 
 
+
+    static async getAgencyById(req, res) {
+        const agencyId = req.params.agencyId;
+        return Agency.findByPk(agencyId, {
+            include: [
+                { model: Address, as: 'Address' },
+                { model: Admin, as: 'ManagerAdmin', attributes: ['AdminID', 'Email'] },
+            ],
+        });
+    }
+
+    static async getAgencyNameById(agencyId) {
+
+        console.log("sono arricato")
+        return Agency.findByPk(agencyId, {
+            attributes: ['name'],
+        });
+    }
+
 }
