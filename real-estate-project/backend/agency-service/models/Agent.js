@@ -1,5 +1,6 @@
 import { Sequelize, DataTypes } from 'sequelize';
 import { createHash } from 'crypto';
+import { url } from 'inspector';
 
 export function createModel(database) {
     database.define('Agent', {
@@ -28,6 +29,10 @@ export function createModel(database) {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
+        urlPhoto: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
         agencyId: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -41,5 +46,6 @@ export function createModel(database) {
             allowNull: false,
             unique: true,
         },
+    
     }, { timestamps: false });
 }

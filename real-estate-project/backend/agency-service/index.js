@@ -4,6 +4,7 @@ import cors from "cors";
 import { adminRouter } from "./routes/adminRouter.js";
 import { agencyRouter } from "./routes/agencyRouter.js";
 import { agentRouter } from "./routes/agentRouter.js";
+import path from "path";
 
 
 const app = express(); // creates an express application
@@ -13,6 +14,8 @@ const PORT = 3000;
 app.use(morgan('dev'));
 
 app.use(cors()); 
+
+app.use("/agency-public/images", express.static(path.join(process.cwd(), "images")));
 
 // Parse incoming requests with a JSON payload
 app.use(express.json());
