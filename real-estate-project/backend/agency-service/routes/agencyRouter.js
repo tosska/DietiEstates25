@@ -16,12 +16,25 @@ agencyRouter.get('/agencies', async (req, res) => {
 // Crea una nuova agenzia
 agencyRouter.post('/agency', async (req, res) => {
     try {
+        console.log('Dati ricevuti nel backend per la creazione dell\'agenzia:', req.body);
+
         const result = await AgencyController.createAgency(req, res);
         res.status(201).json(result);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 });
+
+agencyRouter.get('/admin/:adminId', async (req, res) => {
+    try {
+        const result = await AgencyController.getAgencyByAdminId(req, res);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
+
 
 agencyRouter.get('/agency/:agencyId', async (req, res) => {
     try {
@@ -42,4 +55,7 @@ agencyRouter.get('/agency/:agencyId/name', async (req, res) => {
         res.status(400).json({ message: error.message });
     }       
 });
+
+
+
 

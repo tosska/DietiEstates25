@@ -31,3 +31,12 @@ adminRouter.get('/admin/:id', async (req, res) => {
     }
 });
 
+adminRouter.get("/agency-internal/admin/:id/businessId", (req, res, next) => {
+  console.log("sono arrivato")
+    AdminController.getAdminId(req).then(adminId => {
+      res.json(adminId);
+    }).catch(err => {
+      next(err);
+    });
+});
+

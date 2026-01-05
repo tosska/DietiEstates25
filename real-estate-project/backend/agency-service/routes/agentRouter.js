@@ -1,6 +1,5 @@
 import express from "express";
 import { AgentController } from "../controllers/AgentController.js";
-import { internalOnly } from "../middleware/authorization.js";
 
 export const agentRouter = express.Router();
 

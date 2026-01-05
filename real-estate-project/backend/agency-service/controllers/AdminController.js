@@ -30,9 +30,9 @@ export class AdminController {
         }
 
         const admin = await Admin.create({
-            CredentialsID: credentialsId,
-            Agency_ID: agencyId || null,
-            Manager: true,
+            credentialsId: credentialsId,
+            agencyId: agencyId || null,
+            manager: true,
             role: 'admin',
         });
 
@@ -53,6 +53,16 @@ export class AdminController {
         }
 
         return admin;
+    }
+
+    static async getAdminId(req) {
+
+        const credential_id = req.params.id;
+
+        return Admin.findOne({
+            where: { credentialsId: credential_id },
+            attributes: ['id'],
+        });
     }
     
 }
