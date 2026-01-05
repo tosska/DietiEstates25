@@ -25,6 +25,17 @@ agencyRouter.post('/agency', async (req, res) => {
     }
 });
 
+agencyRouter.get('/admin/:adminId', async (req, res) => {
+    try {
+        const result = await AgencyController.getAgencyByAdminId(req, res);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
+
+
 agencyRouter.get('/agency/:agencyId', async (req, res) => {
     try {
         const agency = await AgencyController.getAgencyById(req, res);      
@@ -44,4 +55,7 @@ agencyRouter.get('/agency/:agencyId/name', async (req, res) => {
         res.status(400).json({ message: error.message });
     }       
 });
+
+
+
 

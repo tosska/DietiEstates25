@@ -120,4 +120,46 @@ export class AgencyController {
         });
     }
 
+    static async getAgencyByAdmin(req, res) {
+        const { adminId } = req.params;
+
+        if (!adminId) {
+        return res.status(400).json({ message: 'adminId mancante' });
+        }
+
+        const admin = await Admin.findByPk(adminId);
+
+        if (!admin) {
+        return res.status(404).json({ message: 'Admin non trovato' });
+        }
+
+        if (!admin.agencyId) {
+        return res.status(404).json({ message: 'Admin senza agenzia associata' });
+        }
+
+        return res.status(200).json({
+        agencyId: admin.agencyId
+        });
+    }
+
+    static async getMyAgency(req) {
+        const adminId = req.user.userId; // dal token JWT
+
+        if (!adminId) {
+            throw new Error('Admin non autenticato');
+        }
+
+        const agency = await Agency.findOne({
+            where: { managerAdminId: adminId }
+        });
+
+        if (!agency) {
+            throw new Error('Agenzia non trovata');
+        }
+
+        return agency;
+    }
+
+
+
 }

@@ -1,8 +1,27 @@
+export async function userContextMiddleware(req, res, next) {
 
+    const authId = req.headers['x-user-authid'];
+    const userId = req.headers["x-user-userid"];
+    const role = req.headers['x-user-role'];
+    const authHeader = req.headers['authorization']
+    const token = authHeader?.split(' ')[1];
+    
+    if(!authId || !userId || !role) {  
+        next({status: 401, message: "Unauthorized"});
+        return;
+    }
 
-export function internalOnly(req, res, next) {
-  //if (req.headers['apiKey'] !== process.env.INTERNAL_API_KEY) {
-    //return res.status(403).json({ error: 'Accesso negato' });
-  //}
-  next();
+    try {
+        await AuthClient.checkUser(authId);
+    }
+    catch(error) {
+        next({status: 401, message: "Unauthorized"})
+    }
+
+    req.token = token;
+    req.authId = authId;
+    req.userId = userId;
+    req.role = role;
+
+    next();
 }
