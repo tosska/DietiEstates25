@@ -161,43 +161,64 @@ export class AuthController {
     }
 
     static async registerAgent(req, res) {
-        const { role } = req.user;
-        if (role !== 'admin') {
-            throw new Error('Solo un admin può registrare un agent');
+        try {
+            const { role } = req.user;
+            if (role !== 'admin') {
+                return res.status(403).json({ message: 'Solo un admin può registrare un agent' });
+            }
+
+            const { email, password, name, surname, phone, vatNumber, yearsExperience, urlPhoto } = req.body;
+            if (!email || !password) {
+                return res.status(400).json({ message: 'Email e password sono obbligatori' });
+            }
+
+            // Crea le credenziali per l'agente
+            const newCredentials = await Credentials.create({
+                email,
+                password,
+                role: 'agent',
+            });
+
+            console.log('Nuove credenziali create:', newCredentials.toJSON());
+
+            // Chiama il microservizio agent-service per creare l'agente
+            const response = await fetch('http://localhost:8000/agency-service/agents', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': req.headers.authorization, // Passa il token
+                },
+                body: JSON.stringify({
+                    credentialsId: newCredentials.id,
+                    name,
+                    surname,
+                    phone,
+                    vatNumber,
+                    yearsExperience,
+                    urlPhoto
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                await newCredentials.destroy(); // rollback credenziali
+                throw new Error(errorData.message || 'Errore durante la creazione dell\'agent');
+            }
+
+            const data = await response.json();
+
+            return res.status(201).json({
+                message: 'Agent registrato con successo',
+                userId: newCredentials.id,
+                agentId: data.agentId,
+            });
+
+        } catch (err) {
+            console.error('Errore registerAgent:', err);
+            return res.status(500).json({ message: err.message });
         }
-
-        const { email, password, agencyId } = req.body;
-        if (!email || !password || !agencyId) {
-            throw new Error('Email, password e agencyId sono obbligatori');
-        }
-
-        const newCredentials = await Credentials.create({
-            Email: email,
-            password: password,
-            role: 'agent',
-        });
-
-        const response = await fetch('http://localhost:3000/agents', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': req.headers.authorization,
-            },
-            body: JSON.stringify({
-                credentialsId: newCredentials.ID,
-                agencyId: agencyId,
-                creatorAdminId: req.user.userId,
-            }),
-        });
-
-        if (!response.ok) {
-            await newCredentials.destroy();
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Errore durante la creazione dell\'agent');
-        }
-
-        return { userId: newCredentials.ID, role: 'agent', token: Jwt.sign({ userId: newCredentials.ID, role: 'agent' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
     }
+
 
     static async registerAdmin(req, res) {
         const { role, userId } = req.user;
