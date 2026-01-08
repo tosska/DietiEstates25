@@ -3,6 +3,8 @@ import { Credentials } from '../models/Database.js';
 import { AgencyClient } from '../clients/agencyClient.js';
 import Jwt from 'jsonwebtoken';
 import { AuthService } from '../services/AuthService.js';
+import { ProviderClient } from '../clients/ProviderClient.js';
+import { auth } from 'google-auth-library';
 
 export class AuthController {
     static async checkCredentials(req) {
@@ -19,18 +21,61 @@ export class AuthController {
 
         if (!credentials) {
             return null;
-        } 
+        }
 
         console.log('Credenziali trovate:', { id: credentials.id, role: credentials.role });
 
         const businessId = await AuthService.getBusinessId(credentials.id, credentials.role);
-        if(!businessId) {
+        if (!businessId) {
             throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
         }
 
-        console.log("token pre ", {authId: credentials.id, userId: businessId, role: credentials.role });
-        
-        return {authId: credentials.id, userId: businessId, role: credentials.role };
+        console.log("token pre ", { authId: credentials.id, userId: businessId, role: credentials.role });
+
+        return { authId: credentials.id, userId: businessId, role: credentials.role };
+    }
+
+
+    static async checkCredentialsFromSocial(req) {
+
+        console.log("HO RICEVUTO CHIAMATA A CHECKCREDENTIALS FROM SOCIAL")
+
+        const { usr, providerToken, providerName } = req.body;
+
+        if (!usr || !providerToken || !providerName) {
+            throw new Error('Email, providerId e providerName sono obbligatori');
+        }
+        console.log('Verifica credenziali social per email:', usr, 'con provider:', providerName);
+        const payload = await ProviderClient.validateSocialToken(providerName, providerToken);
+
+        console.log('Payload ricevuto dal provider:', payload);
+
+        if (!payload) {
+            throw new Error('Token social non valido');
+        }
+
+        if(payload.email !== usr) {
+            throw new Error('L\'account social non corrisponde all\'email fornita');
+        }
+
+        const credentials = await Credentials.findOne({
+            where: { email: usr, providerId: payload.sub, providerName: providerName },
+        });
+
+        if (!credentials) {
+            return null;
+        }
+
+        console.log('Credenziali social trovate:', { id: credentials.id, role: credentials.role });
+
+        const businessId = await AuthService.getBusinessId(credentials.id, credentials.role);
+        if (!businessId) {
+            throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
+        }
+
+        console.log("token pre ", { authId: credentials.id, userId: businessId, role: credentials.role });
+
+        return { authId: credentials.id, userId: businessId, role: credentials.role };
     }
 
 
@@ -99,10 +144,10 @@ export class AuthController {
 
     static issueToken(authId, userId, role) {
         try {
-             return { token: Jwt.sign({authId, userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` , issuer: 'auth-service'}) };
+            return { token: Jwt.sign({ authId, userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s`, issuer: 'auth-service' }) };
         } catch (error) {
             console.log(error);
-        }   
+        }
     }
 
     static async validateToken(req, res) {
@@ -112,7 +157,7 @@ export class AuthController {
         }
         const decoded = Jwt.verify(token, process.env.TOKEN_SECRET || 'your-secret-key');
         return {
-            authId: decoded.authId, 
+            authId: decoded.authId,
             userId: decoded.userId,
             role: decoded.role,
         };
@@ -120,7 +165,7 @@ export class AuthController {
 
     static async registerCustomer(req, res) {
         console.log('Richiesta registerCustomer:', req.body);
-        const { email, password, name, surname, phone } = req.body;
+        const { email, password, name, surname, phone, providerToken, providerName } = req.body;
         if (!email || !password) {
             throw new Error('Email e password sono obbligatori');
         }
@@ -157,7 +202,75 @@ export class AuthController {
             throw new Error(errorData.message || 'Errore durante la creazione del customer');
         }
 
-        return { userId: newCredentials.id, role: 'customer', token: Jwt.sign({ userId: newCredentials.id, role: 'customer' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
+        return this.issueToken(newCredentials.id, customerResponse.customerId, 'customer');
+    }
+
+    static async registerCustomerFromSocial(req, res) {
+        const { email, name, surname, phone, providerToken, providerName } = req.body;
+
+
+        console.log('Richiesta registerCustomerFromSocial:', req.body);
+
+        // 1. Validazione input minimi
+        if (!email || !providerToken || !providerName) {
+            throw new Error('Email e token social sono obbligatori');
+        }
+
+        // 2. Controllo se l'email esiste già
+        const existingCredentials = await Credentials.findOne({ where: { email } });
+        if (existingCredentials) {
+            throw new Error('Email già registrata nel sistema');
+        }
+
+        // 3. Validazione del token tramite il provider scelto
+        const payload = await ProviderClient.validateSocialToken(providerName, providerToken);
+
+        console.log('Payload ricevuto dal provider:', payload);
+
+        // Verifichiamo che l'email del token corrisponda a quella dichiarata
+        if (!payload || payload.email !== email) {
+            throw new Error('L\'account social non corrisponde all\'email fornita');
+        }
+
+        console.log("payload.sub:", payload.sub);
+
+        // 4. Creazione Credenziali (password null e providerId salvato)
+   
+        const newCredentials = await Credentials.create({
+            email: email,
+            password: null, // Importante: nessuna password locale
+            role: 'customer',
+            providerName: providerName,
+            providerId: payload.sub // Il 'sub' di Google è l'ID univoco permanente
+        });    
+
+        console.log('Nuove credenziali create con ID:', newCredentials);
+
+        try {
+            // 5. Creazione profilo nel customer-service
+            const customerResponse = await fetch('http://localhost:3002/customers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    credentialsId: newCredentials.id,
+                    name: name || payload.given_name,
+                    surname: surname || payload.family_name,
+                    phone: phone 
+                })
+            });
+
+            if (!customerResponse.ok) {
+                throw new Error('Errore nella creazione del profilo cliente');
+            }
+
+            // 6. Generazione Token di sessione per l'app
+            return this.issueToken(newCredentials.id, customerResponse.customerId, 'customer');
+
+        } catch (error) {
+            // Rollback se il servizio esterno fallisce
+            await newCredentials.destroy();
+            throw error;
+        }
     }
 
     static async registerAgent(req, res) {
@@ -259,32 +372,32 @@ export class AuthController {
 
         const { email, password, agencyId } = req.body;
         if (!email || !password) {
-        throw new Error('Email e password sono obbligatori');
+            throw new Error('Email e password sono obbligatori');
         }
 
         const newCredentials = await Credentials.create({
-        email: email,
-        password: password,
-        role: 'admin', // Ruolo admin per il manager
+            email: email,
+            password: password,
+            role: 'admin', // Ruolo admin per il manager
         });
 
         const response = await fetch('http://localhost:3000/manager', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': req.headers.authorization,
-        },
-        body: JSON.stringify({
-            credentialsId: newCredentials.id,
-            agencyId: agencyId || null,
-            manager: true, // Imposta Manager a true
-        }),
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': req.headers.authorization,
+            },
+            body: JSON.stringify({
+                credentialsId: newCredentials.id,
+                agencyId: agencyId || null,
+                manager: true, // Imposta Manager a true
+            }),
         });
 
         if (!response.ok) {
-        await newCredentials.destroy();
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Errore durante la creazione del manager');
+            await newCredentials.destroy();
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Errore durante la creazione del manager');
         }
 
         const token = Jwt.sign({ userId: newCredentials.ID, role: 'admin' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` });
@@ -292,34 +405,11 @@ export class AuthController {
     }
 
     static async registerCompany(req, res) {
-        const { email, password, phone, description, vatNumber, website, street,  houseNumber, city, postalCode, state, country, unitDetail, longitude, latitude } = req.body;
+        const { email, password, phone, description, vatNumber, website, street, houseNumber, city, postalCode, state, country, unitDetail, longitude, latitude } = req.body;
 
         try {
             console.log('Invio richiesta a agency-service:', {
-            email, 
-            password,
-            phone,
-            description,
-            vatNumber,
-            website,
-            street,
-            houseNumber,
-            city,
-            postalCode,
-            state,
-            country,
-            unitDetail,
-            longitude,
-            latitude
-            });
-
-            const response = await fetch('http://localhost:3000/agency', { // Corretto il percorso a /api/agency/agency
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email, 
+                email,
                 password,
                 phone,
                 description,
@@ -334,23 +424,46 @@ export class AuthController {
                 unitDetail,
                 longitude,
                 latitude
-            }),
+            });
+
+            const response = await fetch('http://localhost:3000/agency', { // Corretto il percorso a /api/agency/agency
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    phone,
+                    description,
+                    vatNumber,
+                    website,
+                    street,
+                    houseNumber,
+                    city,
+                    postalCode,
+                    state,
+                    country,
+                    unitDetail,
+                    longitude,
+                    latitude
+                }),
             });
 
             const responseText = await response.clone().text(); // Clona la risposta per il log
             console.log('Risposta grezza da agency-service:', responseText);
 
             if (!response.ok) {
-            const errorData = await response.json(); // Elabora il JSON
-            throw new Error(errorData.message || `Errore ${response.status}: ${responseText}`);
+                const errorData = await response.json(); // Elabora il JSON
+                throw new Error(errorData.message || `Errore ${response.status}: ${responseText}`);
             }
 
             const result = await response.json();
             return {
-            message: 'Company and manager registered successfully',
-            agencyId: result.agencyId,
-            adminId: result.adminId,
-            token: result.token,
+                message: 'Company and manager registered successfully',
+                agencyId: result.agencyId,
+                adminId: result.adminId,
+                token: result.token,
             };
         } catch (error) {
             console.error('Errore in registerCompany:', error);
@@ -362,16 +475,16 @@ export class AuthController {
 
     //da cancellare
     static async isTokenValid(token) {
-          try {
-              const decoded = Jwt.verify(token, process.env.TOKEN_SECRET || 'your-secret-key');
-              const credentials = await Credentials.findByPk(decoded.authId);
-              if (!credentials) {
-                  throw new Error('Utente non trovato');
-              }
-              return { authId: decoded.authId, userId: decoded.userId, role: decoded.role };
-          } catch (error) {
-              throw new Error('Token non valido');
-          }
+        try {
+            const decoded = Jwt.verify(token, process.env.TOKEN_SECRET || 'your-secret-key');
+            const credentials = await Credentials.findByPk(decoded.authId);
+            if (!credentials) {
+                throw new Error('Utente non trovato');
+            }
+            return { authId: decoded.authId, userId: decoded.userId, role: decoded.role };
+        } catch (error) {
+            throw new Error('Token non valido');
+        }
     }
 
 
@@ -379,13 +492,13 @@ export class AuthController {
 
         let user = await Credentials.findByPk(credentialId);
 
-        if(!user) {
+        if (!user) {
             throw new Error("User not found");
         }
 
         return true;
     }
 
-    
+
 
 }
