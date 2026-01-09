@@ -24,10 +24,38 @@ export const authenticationRouter = express.Router();
       }
   });
 
+    authenticationRouter.post("/login/social", async (req, res) => {
+      try {
+
+          const credentials = await AuthController.checkCredentialsFromSocial(req);
+          if (credentials) {
+              const {authId, userId, role } = credentials;
+              console.log('Generazione token con authId', authId, 'userId:', userId, 'e role:', role); // Log
+              res.json(AuthController.issueToken(authId, userId, role));
+              console.log("token generato")
+          } else {
+              console.log("Credenziali non valide");
+              res.status(401).json({ error: "Invalid credentials. Try again." });
+          }
+      } catch (error) {
+        console.log(error);
+          res.status(500).json({ error: error.message });
+      }
+  });
+
   // Route per la registrazione di un Customer
   authenticationRouter.post('/register/customer', async (req, res) => {
     try {
       const result = await AuthController.registerCustomer(req, res);
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(500).json({ message: `Errore durante la registrazione: ${error.message}` });
+    }
+  });
+
+  authenticationRouter.post('/register/customer/social', async (req, res) => {
+    try {
+      const result = await AuthController.registerCustomerFromSocial(req, res);
       res.status(201).json(result);
     } catch (error) {
       res.status(500).json({ message: `Errore durante la registrazione: ${error.message}` });
