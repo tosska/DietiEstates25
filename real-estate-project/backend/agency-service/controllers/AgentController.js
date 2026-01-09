@@ -9,13 +9,20 @@ export class AgentController {
                 throw new Error('credentialsId mancante');
             }
 
+            
+
             // Recupera admin loggato
-            const creatorAdminId = req.user.userId;
-            const admin = await Admin.findByPk(creatorAdminId);
-            if (!admin) throw new Error('Admin non trovato');
+            const creatorAdmin = await Admin.findOne({
+                where: { id: req.userId }
+            });
+
+            if (!creatorAdmin) {
+                throw new Error('Admin non trovato');
+            }
+
 
             // Ricava agencyId dall'admin
-            const agencyId = admin.agencyId;
+            const agencyId = creatorAdmin.agencyId;
             if (!agencyId) throw new Error('Admin non ha agenzia associata');
 
             // Controlla che l'agenzia esista
@@ -26,7 +33,6 @@ export class AgentController {
             const agent = await Agent.create({
                 credentialsId,
                 agencyId,
-                creatorAdminId,
                 name,
                 surname,
                 phone,

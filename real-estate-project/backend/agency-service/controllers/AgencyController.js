@@ -65,7 +65,7 @@ export class AgencyController {
             body: JSON.stringify({
                 email,
                 password,
-                role: 'admin',
+                role: 'manager',
                 agencyId: agency.agencyId,
             }),
             });

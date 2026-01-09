@@ -200,9 +200,9 @@ export class AuthController {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = response.statusText;
                 await newCredentials.destroy(); // rollback credenziali
-                throw new Error(errorData.message || 'Errore durante la creazione dell\'agent');
+                throw new Error(errorData || 'Errore durante la creazione dell\'agent');
             }
 
             const data = await response.json();
@@ -221,59 +221,62 @@ export class AuthController {
 
 
     static async registerAdmin(req, res) {
-        const { role, userId } = req.user;
-        if (role !== 'admin') {
-            throw new Error('Solo un admin può registrare un admin');
+        try {
+            const { role } = req.user;
+            if (role !== 'manager') {
+                return res.status(403).json({ message: 'Solo un manager può registrare un admin' });
+            }
+
+            const { email, password, name, surname, phone, vatNumber, yearsExperience, urlPhoto } = req.body;
+            if (!email || !password) {
+                return res.status(400).json({ message: 'Email e password sono obbligatori' });
+            }
+
+            // Crea le credenziali per l'admin
+            const newCredentials = await Credentials.create({
+                email,
+                password,
+                role: 'admin',
+            });
+
+            console.log('Nuove credenziali create:', newCredentials.toJSON());
+
+            // Chiama il microservizio agent-service per creare l'agente
+            const response = await fetch('http://localhost:8000/agency-service/admins', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': req.headers.authorization, // Passa il token
+                },
+                body: JSON.stringify({
+                    credentialsId: newCredentials.id,
+                    name,
+                    surname,
+                    phone,
+                    vatNumber,
+                    yearsExperience,
+                    urlPhoto
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = response.statusText;
+                await newCredentials.destroy(); // rollback credenziali
+                throw new Error(errorData || 'Errore durante la creazione dell\'admin');
+            }
+
+            const data = await response.json();
+
+            return res.status(201).json({
+                message: 'Admin registrato con successo',
+                userId: newCredentials.id,
+                agentId: data.agentId,
+            });
+
+        } catch (err) {
+            console.error('Errore registerAdmin:', err);
+            return res.status(500).json({ message: err.message });
         }
-
-        const adminResponse = await fetch(`http://localhost:3000/admins/${userId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': req.headers.authorization,
-            },
-        });
-
-        if (!adminResponse.ok) {
-            const errorData = await adminResponse.json();
-            throw new Error(errorData.message || 'Errore nel verificare lo stato di Manager');
-        }
-
-        const adminData = await adminResponse.json();
-        if (!adminData.Manager) {
-            throw new Error('Solo un Manager può registrare un admin');
-        }
-
-        const { email, password, agencyId } = req.body;
-        if (!email || !password) {
-            throw new Error('Email e password sono obbligatori');
-        }
-
-        const newCredentials = await Credentials.create({
-            Email: email,
-            password: password,
-            role: 'admin',
-        });
-
-        const response = await fetch('http://localhost:3000/admins', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': req.headers.authorization,
-            },
-            body: JSON.stringify({
-                credentialsId: newCredentials.ID,
-                agencyId: agencyId || null,
-                manager: req.body.manager || false,
-            }),
-        });
-
-        if (!response.ok) {
-            await newCredentials.destroy();
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Errore durante la creazione dell\'admin');
-        }
-
-        return { userId: newCredentials.ID, role: 'admin', token: Jwt.sign({ userId: newCredentials.ID, role: 'admin' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
     }
 
     static async registerManager(req, res) {
@@ -286,7 +289,7 @@ export class AuthController {
         const newCredentials = await Credentials.create({
         email: email,
         password: password,
-        role: 'admin', // Ruolo admin per il manager
+        role: 'manager', 
         });
 
         const response = await fetch('http://localhost:3000/manager', {

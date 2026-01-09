@@ -6,6 +6,7 @@ export const agentRouter = express.Router();
 
 agentRouter.post('/agents', userContextMiddleware, async (req, res) => {
     try {
+        console.log("SONO ENTRATO NELLA ROUYTE");
         const result = await AgentController.createAgent(req, res);
         res.status(201).json(result);
     } catch (error) {

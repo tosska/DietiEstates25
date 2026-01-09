@@ -8,6 +8,30 @@ export function createModel(database) {
             primaryKey: true,
             autoIncrement: true,
         },
+        name: {
+            type: DataTypes.STRING(255),
+            allowNull: true,    // per test
+        },
+        surname: {
+            type: DataTypes.STRING(255),
+            allowNull: true,    // per test
+        },
+        phone: {
+            type: DataTypes.STRING(255),
+            allowNull: true,    // per test
+        },
+        vatNumber: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        yearsExperience: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        urlPhoto: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
         manager: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
@@ -16,11 +40,6 @@ export function createModel(database) {
         agencyId: {
             type: DataTypes.INTEGER,
             allowNull: false,
-        },
-        role: { 
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: 'admin',
         },
         credentialsId: {
             type: DataTypes.INTEGER,

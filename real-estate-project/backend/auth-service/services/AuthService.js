@@ -14,6 +14,9 @@ export class AuthService {
             case 'admin':
                 businessId = await AgencyClient.getAdminId(credential_id);
             break;
+            case 'manager':
+                businessId = await AgencyClient.getAdminId(credential_id);
+            break;
             case 'agent':
                 console.log("sono agente")
                 businessId = await AgencyClient.getAgentId(credential_id);
