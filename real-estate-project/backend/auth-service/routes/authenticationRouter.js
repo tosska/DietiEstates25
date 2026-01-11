@@ -6,23 +6,68 @@ import { enforceAuthentication } from "../middleware/authorization.js";
 export const authenticationRouter = express.Router();
 
   authenticationRouter.post("/login", async (req, res) => {
-      try {
-      
-          const credentials = await AuthController.checkCredentials(req);
-          if (credentials) {
-              const {authId, userId, role } = credentials;
-              console.log('Generazione token con authId', authId, 'userId:', userId, 'e role:', role); // Log
-              res.json(AuthController.issueToken(authId, userId, role));
-              console.log("token generato")
-          } else {
-              console.log("Credenziali non valide");
-              res.status(401).json({ error: "Invalid credentials. Try again." });
-          }
-      } catch (error) {
-        console.log(error);
-          res.status(500).json({ error: error.message });
+    try {
+      const credentials = await AuthController.checkCredentials(req);
+
+      if (credentials) {
+        const { authId, userId, role, mustChangePassword } = credentials;
+
+        console.log(
+          'Generazione token con authId',
+          authId,
+          'userId:',
+          userId,
+          'e role:',
+          role
+        );
+
+        const token = AuthController.issueToken(authId, userId, role);
+
+        res.json({
+          token,
+          role,
+          mustChangePassword
+        });
+
+        console.log("token generato");
+      } else {
+        console.log("Credenziali non valide");
+        res.status(401).json({ error: "Invalid credentials. Try again." });
       }
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: error.message });
+    }
   });
+
+  
+  authenticationRouter.post('/change-password-first-login', enforceAuthentication, async (req, res) => {
+      try {
+        const { newPassword } = req.body;
+        const { authId } = req.user; // messo da enforceAuthentication
+
+        if (!newPassword || newPassword.length < 4) {
+          return res.status(400).json({
+            message: 'La password è obbligatoria e deve avere almeno 4 caratteri'
+          });
+        }
+
+        await AuthController.changePasswordFirstLogin(authId, newPassword);
+
+        return res.status(200).json({
+          message: 'Password aggiornata con successo'
+        });
+
+      } catch (err) {
+        console.error('Errore change-password-first-login:', err);
+        return res.status(500).json({ message: err.message });
+      }
+    }
+  );
+
+
+
+
 
     authenticationRouter.post("/login/social", async (req, res) => {
       try {

@@ -9,31 +9,53 @@ import { auth } from 'google-auth-library';
 export class AuthController {
     static async checkCredentials(req) {
         const { usr, pwd } = req.body;
+
         if (!usr || !pwd) {
             throw new Error('Email e password sono obbligatori');
         }
 
-        const hashedPwd = createHash('sha256').update(pwd).digest('hex');
-        console.log(hashedPwd);
+        // 1️⃣ Cerca SOLO per email
         const credentials = await Credentials.findOne({
-            where: { email: usr, password: hashedPwd },
+            where: { email: usr }
         });
 
         if (!credentials) {
-            return null;
+            throw new Error('Invalid credentials 1');
         }
 
-        console.log('Credenziali trovate:', { id: credentials.id, role: credentials.role });
+        // 2️⃣ Verifica password
+        const hashedPwd = createHash('sha256').update(pwd).digest('hex');
 
-        const businessId = await AuthService.getBusinessId(credentials.id, credentials.role);
+        console.log('Password hashata:', hashedPwd);
+        console.log('Credentiali memorizzate password:', credentials.password);
+        if (hashedPwd !== credentials.password) {
+            throw new Error('Invalid credentials 2');
+        }
+
+        console.log('Credenziali trovate:', {
+            id: credentials.id,
+            role: credentials.role,
+            mustChangePassword: credentials.mustChangePassword
+        });
+
+        // 3️⃣ Recupera businessId
+        const businessId = await AuthService.getBusinessId(
+            credentials.id,
+            credentials.role
+        );
+
         if (!businessId) {
             throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
         }
 
-        console.log("token pre ", { authId: credentials.id, userId: businessId, role: credentials.role });
-
-        return { authId: credentials.id, userId: businessId, role: credentials.role };
+        return {
+            authId: credentials.id,
+            userId: businessId,
+            role: credentials.role,
+            mustChangePassword: credentials.mustChangePassword
+        };
     }
+
 
 
     static async checkCredentialsFromSocial(req) {
@@ -276,7 +298,7 @@ export class AuthController {
     static async registerAgent(req, res) {
         try {
             const { role } = req.user;
-            if (role !== 'admin') {
+            if (role !== 'admin' && role !== 'manager') {
                 return res.status(403).json({ message: 'Solo un admin può registrare un agent' });
             }
 
@@ -290,6 +312,7 @@ export class AuthController {
                 email,
                 password,
                 role: 'agent',
+                mustChangePassword: true,
             });
 
             console.log('Nuove credenziali create:', newCredentials.toJSON());
@@ -350,6 +373,7 @@ export class AuthController {
                 email,
                 password,
                 role: 'admin',
+                mustChangePassword: true,
             });
 
             console.log('Nuove credenziali create:', newCredentials.toJSON());
@@ -522,6 +546,25 @@ export class AuthController {
 
         return true;
     }
+
+    static async changePasswordFirstLogin(authId, newPassword) {
+        const credentials = await Credentials.findByPk(authId);
+
+        if (!credentials) {
+            throw new Error('Utente non trovato');
+        }
+
+        // console.log('New passwrod:', newPassword);
+        // const hashedPwd = createHash('sha256')
+        //     .update(newPassword)
+        //     .digest('hex');
+
+        credentials.password = newPassword;
+        credentials.mustChangePassword = false;
+
+        await credentials.save();
+    }
+
 
 
 

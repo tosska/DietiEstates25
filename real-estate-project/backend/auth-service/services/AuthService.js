@@ -8,7 +8,6 @@ export class AuthService {
 
         let businessId = null;
 
-        console.log('Business ID ottenuto:', businessId);
 
         switch(role) {
             case 'admin':
