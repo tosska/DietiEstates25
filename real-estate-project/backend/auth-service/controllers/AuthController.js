@@ -199,7 +199,7 @@ export class AuthController {
 
         const newCredentials = await Credentials.create({
             email: email,
-            password: password, // Considera di hashare la password come negli altri metodi
+            password: password, 
             role: 'customer',
         });
 
@@ -223,6 +223,8 @@ export class AuthController {
             console.log('Errore da customer-service:', errorData);
             throw new Error(errorData.message || 'Errore durante la creazione del customer');
         }
+
+        const customerResponse = await response.json();
 
         return this.issueToken(newCredentials.id, customerResponse.customerId, 'customer');
     }

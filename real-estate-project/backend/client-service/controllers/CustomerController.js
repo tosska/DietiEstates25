@@ -52,13 +52,13 @@ export class CustomerController {
         try {
             const { id } = req.params; 
             const { email, password, name, surname, phone } = req.body;
-            const { userId, role } = req.user;
+            const { userId, role } = req;
 
             console.log('Richiesta updateCustomer - ID:', id, 'Body:', req.body, 'User:', { userId, role });
 
             // Cerca il customer usando credentialsID
             const customer = await Customer.findOne({
-                where: { credentialsId: id }
+                where: { id: id }
             });
             if (!customer) {
                 console.log('Customer non trovato per credentialsId:', id);
@@ -67,19 +67,11 @@ export class CustomerController {
                 return;
             }
 
-            // Autorizza admin o il customer stesso
-            if (role !== 'admin' && parseInt(userId) !== customer.credentialsId) {
-                console.log('Autorizzazione fallita per userId:', userId, 'e credentialsId:', customer.credentialsId);
-                res.status(403).json({ error: 'Non autorizzato a modificare questo customer' });
-                responseSent = true;
-                return;
-            }
-
             // Aggiorna i campi del Customer
             const updateData = {
-                Name: name || customer.Name,
-                Surname: surname || customer.Surname,
-                Phone: phone !== undefined ? phone : customer.Phone
+                name: name || customer.name,
+                surname: surname || customer.surname,
+                phone: phone !== undefined ? phone : customer.phone
             };
             console.log('Dati da aggiornare in Customer:', updateData);
             const updatedCustomer = await customer.update(updateData); // Restituisce l'istanza aggiornata
