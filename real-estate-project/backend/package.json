@@ -10,5 +10,8 @@
   "description": "",
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "express-validator": "^7.3.1"
   }
 }

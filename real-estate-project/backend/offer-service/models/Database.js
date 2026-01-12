@@ -14,11 +14,3 @@ createOfferModel(database);
 export const { Offer } = database.models;
 
 
-// Sincronizzazione del database
-database.sync()  //togliere alter: true (comporta rischi e perdita di dati)
-    .then(() => {
-        console.log("Database sincronizzato correttamente");
-    })
-    .catch(err => {
-        console.error("Errore nella sincronizzazione del database: " + err.message);
-    });

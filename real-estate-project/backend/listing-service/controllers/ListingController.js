@@ -155,8 +155,7 @@ export class ListingController {
         listing.status="Closed";
         listing.save();
 
-        //mettere comando rabbitMQ
-
+        
         return listing;
 
     }

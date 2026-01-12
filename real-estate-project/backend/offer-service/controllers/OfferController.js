@@ -47,15 +47,22 @@ export class OfferController {
         let offer = await Offer.findByPk(offerId);
         if (!offer) throw new Error('Offer not found');
         if (offer.status !== "Pending") throw new Error('This offer has already been responded to');
-        if (offerResponse !== 'Accepted' && offerResponse !== 'Rejected') {
-            throw new Error('Invalid response. Must be "Accepted" or "Rejected".');
+        if(offerResponse !== 'Accepted' && offerResponse !== 'Rejected') {
+            throw new Error('Invalid offer response. Must be "Accepted" or "Rejected"');
         }
-        await Offer.update({ status: offerResponse }, { where: { id: offer.id } });
+        
+        const [result] = await Offer.update({ status: offerResponse }, { where: { id: offer.id } });
+
+        if (result === 0) {
+            throw new Error('Failed to update offer');
+        }
+
         if (offerResponse === 'Accepted') {
             await OfferService.setAllOffersRejectedForListing(offer.listing_id);
             ListingClient.closeListing(offer.listing_id, token);
         }
-        return offer;
+
+        return result;
     }
 
     static async createCounteroffer(offerId, counterOfferData, role) {
