@@ -8,10 +8,12 @@ export class AuthService {
 
         let businessId = null;
 
-        console.log('Business ID ottenuto:', businessId);
 
         switch(role) {
             case 'admin':
+                businessId = await AgencyClient.getAdminId(credential_id);
+            break;
+            case 'manager':
                 businessId = await AgencyClient.getAdminId(credential_id);
             break;
             case 'agent':

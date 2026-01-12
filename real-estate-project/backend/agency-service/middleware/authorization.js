@@ -1,11 +1,13 @@
-export async function userContextMiddleware(req, res, next) {
+import { AuthClient } from "../clients/AuthClient.js"
 
+export async function userContextMiddleware(req, res, next) {
+    
     const authId = req.headers['x-user-authid'];
     const userId = req.headers["x-user-userid"];
     const role = req.headers['x-user-role'];
     const authHeader = req.headers['authorization']
     const token = authHeader?.split(' ')[1];
-    
+
     if(!authId || !userId || !role) {  
         next({status: 401, message: "Unauthorized"});
         return;
@@ -15,6 +17,7 @@ export async function userContextMiddleware(req, res, next) {
         await AuthClient.checkUser(authId);
     }
     catch(error) {
+        console.log(error);
         next({status: 401, message: "Unauthorized"})
     }
 

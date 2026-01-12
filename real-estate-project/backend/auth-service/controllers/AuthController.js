@@ -9,31 +9,53 @@ import { auth } from 'google-auth-library';
 export class AuthController {
     static async checkCredentials(req) {
         const { usr, pwd } = req.body;
+
         if (!usr || !pwd) {
             throw new Error('Email e password sono obbligatori');
         }
 
-        const hashedPwd = createHash('sha256').update(pwd).digest('hex');
-        console.log(hashedPwd);
+        // 1️⃣ Cerca SOLO per email
         const credentials = await Credentials.findOne({
-            where: { email: usr, password: hashedPwd },
+            where: { email: usr }
         });
 
         if (!credentials) {
-            return null;
+            throw new Error('Invalid credentials 1');
         }
 
-        console.log('Credenziali trovate:', { id: credentials.id, role: credentials.role });
+        // 2️⃣ Verifica password
+        const hashedPwd = createHash('sha256').update(pwd).digest('hex');
 
-        const businessId = await AuthService.getBusinessId(credentials.id, credentials.role);
+        console.log('Password hashata:', hashedPwd);
+        console.log('Credentiali memorizzate password:', credentials.password);
+        if (hashedPwd !== credentials.password) {
+            throw new Error('Invalid credentials 2');
+        }
+
+        console.log('Credenziali trovate:', {
+            id: credentials.id,
+            role: credentials.role,
+            mustChangePassword: credentials.mustChangePassword
+        });
+
+        // 3️⃣ Recupera businessId
+        const businessId = await AuthService.getBusinessId(
+            credentials.id,
+            credentials.role
+        );
+
         if (!businessId) {
             throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
         }
 
-        console.log("token pre ", { authId: credentials.id, userId: businessId, role: credentials.role });
-
-        return { authId: credentials.id, userId: businessId, role: credentials.role };
+        return {
+            authId: credentials.id,
+            userId: businessId,
+            role: credentials.role,
+            mustChangePassword: credentials.mustChangePassword
+        };
     }
+
 
 
     static async checkCredentialsFromSocial(req) {
@@ -90,7 +112,7 @@ export class AuthController {
             }
 
             const updateData = {};
-            if (email) updateData.Email = email;
+            if (email) updateData.email = email;
             if (password) updateData.password = password; // Verrà hashatto dal set hook
             await credentials.update(updateData);
 
@@ -106,31 +128,32 @@ export class AuthController {
 
         try {
             const { id } = req.params;
-            const { userId, role } = req.user;
+            // Estraiamo authId dal token decodificato (req.user)
+            const { userId, role, authId } = req.user; 
 
-            console.log('Richiesta deleteCredentials - ID:', id, 'User:', { userId, role });
+            console.log('Richiesta deleteCredentials - ID:', id, 'Token AuthID:', authId);
 
-            // Cerca le credenziali
             const credentials = await Credentials.findByPk(id);
             if (!credentials) {
-                console.log('Credenziali non trovate per ID:', id);
                 res.status(404).json({ message: 'Credenziali non trovate' });
                 responseSent = true;
                 return;
             }
 
-            // Autorizza admin o il proprietario delle credenziali
-            if (role !== 'admin' && parseInt(userId) !== parseInt(id)) {
-                console.log('Autorizzazione fallita per userId:', userId, 'e ID:', id);
-                res.status(403).json({ message: 'Non autorizzato a eliminare queste credenziali' });
+            // CORREZIONE FONDAMENTALE:
+            // Confrontiamo l'authId del token (es. 80) con l'ID richiesto (es. 80).
+            // NON usare userId (es. 7) qui.
+            if (role !== 'admin' && parseInt(authId) !== parseInt(id)) {
+                console.log(`Accesso negato: Token AuthID ${authId} vs Richiesto ${id}`);
+                res.status(403).json({ message: 'Non autorizzato' });
                 responseSent = true;
                 return;
             }
 
-            // Elimina le credenziali
-            console.log('Eliminazione delle credenziali con ID:', id);
+            // Elimina SOLO le credenziali.
+            // La cancellazione a cascata del Customer deve essere gestita dal DB (ON DELETE CASCADE).
             await credentials.destroy();
-            console.log('Credenziali eliminate con successo');
+            console.log('Credenziali eliminate con successo.');
 
             res.status(200).json({ message: 'Credenziali eliminate con successo' });
             responseSent = true;
@@ -177,7 +200,7 @@ export class AuthController {
 
         const newCredentials = await Credentials.create({
             email: email,
-            password: password, // Considera di hashare la password come negli altri metodi
+            password: password, 
             role: 'customer',
         });
 
@@ -201,6 +224,8 @@ export class AuthController {
             console.log('Errore da customer-service:', errorData);
             throw new Error(errorData.message || 'Errore durante la creazione del customer');
         }
+
+        const customerResponse = await response.json();
 
         return this.issueToken(newCredentials.id, customerResponse.customerId, 'customer');
     }
@@ -276,7 +301,7 @@ export class AuthController {
     static async registerAgent(req, res) {
         try {
             const { role } = req.user;
-            if (role !== 'admin') {
+            if (role !== 'admin' && role !== 'manager') {
                 return res.status(403).json({ message: 'Solo un admin può registrare un agent' });
             }
 
@@ -290,6 +315,7 @@ export class AuthController {
                 email,
                 password,
                 role: 'agent',
+                mustChangePassword: true,
             });
 
             console.log('Nuove credenziali create:', newCredentials.toJSON());
@@ -313,9 +339,9 @@ export class AuthController {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = response.statusText;
                 await newCredentials.destroy(); // rollback credenziali
-                throw new Error(errorData.message || 'Errore durante la creazione dell\'agent');
+                throw new Error(errorData || 'Errore durante la creazione dell\'agent');
             }
 
             const data = await response.json();
@@ -334,59 +360,63 @@ export class AuthController {
 
 
     static async registerAdmin(req, res) {
-        const { role, userId } = req.user;
-        if (role !== 'admin') {
-            throw new Error('Solo un admin può registrare un admin');
+        try {
+            const { role } = req.user;
+            if (role !== 'manager') {
+                return res.status(403).json({ message: 'Solo un manager può registrare un admin' });
+            }
+
+            const { email, password, name, surname, phone, vatNumber, yearsExperience, urlPhoto } = req.body;
+            if (!email || !password) {
+                return res.status(400).json({ message: 'Email e password sono obbligatori' });
+            }
+
+            // Crea le credenziali per l'admin
+            const newCredentials = await Credentials.create({
+                email,
+                password,
+                role: 'admin',
+                mustChangePassword: true,
+            });
+
+            console.log('Nuove credenziali create:', newCredentials.toJSON());
+
+            // Chiama il microservizio agent-service per creare l'agente
+            const response = await fetch('http://localhost:8000/agency-service/admins', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': req.headers.authorization, // Passa il token
+                },
+                body: JSON.stringify({
+                    credentialsId: newCredentials.id,
+                    name,
+                    surname,
+                    phone,
+                    vatNumber,
+                    yearsExperience,
+                    urlPhoto
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = response.statusText;
+                await newCredentials.destroy(); // rollback credenziali
+                throw new Error(errorData || 'Errore durante la creazione dell\'admin');
+            }
+
+            const data = await response.json();
+
+            return res.status(201).json({
+                message: 'Admin registrato con successo',
+                userId: newCredentials.id,
+                agentId: data.agentId,
+            });
+
+        } catch (err) {
+            console.error('Errore registerAdmin:', err);
+            return res.status(500).json({ message: err.message });
         }
-
-        const adminResponse = await fetch(`http://localhost:3000/admins/${userId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': req.headers.authorization,
-            },
-        });
-
-        if (!adminResponse.ok) {
-            const errorData = await adminResponse.json();
-            throw new Error(errorData.message || 'Errore nel verificare lo stato di Manager');
-        }
-
-        const adminData = await adminResponse.json();
-        if (!adminData.Manager) {
-            throw new Error('Solo un Manager può registrare un admin');
-        }
-
-        const { email, password, agencyId } = req.body;
-        if (!email || !password) {
-            throw new Error('Email e password sono obbligatori');
-        }
-
-        const newCredentials = await Credentials.create({
-            Email: email,
-            password: password,
-            role: 'admin',
-        });
-
-        const response = await fetch('http://localhost:3000/admins', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': req.headers.authorization,
-            },
-            body: JSON.stringify({
-                credentialsId: newCredentials.ID,
-                agencyId: agencyId || null,
-                manager: req.body.manager || false,
-            }),
-        });
-
-        if (!response.ok) {
-            await newCredentials.destroy();
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Errore durante la creazione dell\'admin');
-        }
-
-        return { userId: newCredentials.ID, role: 'admin', token: Jwt.sign({ userId: newCredentials.ID, role: 'admin' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` }) };
     }
 
     static async registerManager(req, res) {
@@ -397,9 +427,9 @@ export class AuthController {
         }
 
         const newCredentials = await Credentials.create({
-            email: email,
-            password: password,
-            role: 'admin', // Ruolo admin per il manager
+        email: email,
+        password: password,
+        role: 'manager', 
         });
 
         const response = await fetch('http://localhost:3000/manager', {
@@ -518,6 +548,40 @@ export class AuthController {
         }
 
         return true;
+    }
+
+    static async changePasswordFirstLogin(authId, newPassword) {
+        const credentials = await Credentials.findByPk(authId);
+
+        if (!credentials) {
+            throw new Error('Utente non trovato');
+        }
+
+        credentials.password = newPassword;
+        credentials.mustChangePassword = false;
+
+        await credentials.save();
+    }
+
+
+    static async getCredentialsById(req, res) {
+        try {
+            const { id } = req.params;
+            const credentials = await Credentials.findByPk(id);
+            
+            if (!credentials) {
+                return res.status(404).json({ error: 'Credenziali non trovate' });
+            }
+
+            // Restituiamo solo dati sicuri
+            return res.status(200).json({
+                id: credentials.id,
+                email: credentials.email,
+                role: credentials.role
+            });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
     }
 
 

@@ -37,10 +37,6 @@ export function createModel(database) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        creatorAdminId: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
         credentialsId: {
             type: DataTypes.INTEGER,
             allowNull: false,

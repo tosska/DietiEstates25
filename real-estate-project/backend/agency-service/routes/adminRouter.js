@@ -1,10 +1,11 @@
 // agency-service/routes/adminRoutes.js
 import express from "express";
 import { AdminController } from "../controllers/AdminController.js";
+import { userContextMiddleware } from "../middleware/authorization.js";
 
 export const adminRouter = express.Router();
 
-adminRouter.post('/admins', async (req, res) => {
+adminRouter.post('/admins', userContextMiddleware, async (req, res) => {
     try {
         const result = await AdminController.createAdmin(req, res);
         res.status(201).json(result);

@@ -39,6 +39,11 @@ export function createModel(database) {
             type: DataTypes.STRING,
             allowNull: false,
             defaultValue: 'admin',
-        },
+        }, 
+        mustChangePassword: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },        
     }, { timestamps: false });
 }
