@@ -112,7 +112,7 @@ export class AuthController {
             }
 
             const updateData = {};
-            if (email) updateData.Email = email;
+            if (email) updateData.email = email;
             if (password) updateData.password = password; // Verrà hashatto dal set hook
             await credentials.update(updateData);
 
@@ -128,31 +128,32 @@ export class AuthController {
 
         try {
             const { id } = req.params;
-            const { userId, role } = req.user;
+            // Estraiamo authId dal token decodificato (req.user)
+            const { userId, role, authId } = req.user; 
 
-            console.log('Richiesta deleteCredentials - ID:', id, 'User:', { userId, role });
+            console.log('Richiesta deleteCredentials - ID:', id, 'Token AuthID:', authId);
 
-            // Cerca le credenziali
             const credentials = await Credentials.findByPk(id);
             if (!credentials) {
-                console.log('Credenziali non trovate per ID:', id);
                 res.status(404).json({ message: 'Credenziali non trovate' });
                 responseSent = true;
                 return;
             }
 
-            // Autorizza admin o il proprietario delle credenziali
-            if (role !== 'admin' && parseInt(userId) !== parseInt(id)) {
-                console.log('Autorizzazione fallita per userId:', userId, 'e ID:', id);
-                res.status(403).json({ message: 'Non autorizzato a eliminare queste credenziali' });
+            // CORREZIONE FONDAMENTALE:
+            // Confrontiamo l'authId del token (es. 80) con l'ID richiesto (es. 80).
+            // NON usare userId (es. 7) qui.
+            if (role !== 'admin' && parseInt(authId) !== parseInt(id)) {
+                console.log(`Accesso negato: Token AuthID ${authId} vs Richiesto ${id}`);
+                res.status(403).json({ message: 'Non autorizzato' });
                 responseSent = true;
                 return;
             }
 
-            // Elimina le credenziali
-            console.log('Eliminazione delle credenziali con ID:', id);
+            // Elimina SOLO le credenziali.
+            // La cancellazione a cascata del Customer deve essere gestita dal DB (ON DELETE CASCADE).
             await credentials.destroy();
-            console.log('Credenziali eliminate con successo');
+            console.log('Credenziali eliminate con successo.');
 
             res.status(200).json({ message: 'Credenziali eliminate con successo' });
             responseSent = true;
@@ -556,17 +557,32 @@ export class AuthController {
             throw new Error('Utente non trovato');
         }
 
-        // console.log('New passwrod:', newPassword);
-        // const hashedPwd = createHash('sha256')
-        //     .update(newPassword)
-        //     .digest('hex');
-
         credentials.password = newPassword;
         credentials.mustChangePassword = false;
 
         await credentials.save();
     }
 
+
+    static async getCredentialsById(req, res) {
+        try {
+            const { id } = req.params;
+            const credentials = await Credentials.findByPk(id);
+            
+            if (!credentials) {
+                return res.status(404).json({ error: 'Credenziali non trovate' });
+            }
+
+            // Restituiamo solo dati sicuri
+            return res.status(200).json({
+                id: credentials.id,
+                email: credentials.email,
+                role: credentials.role
+            });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
 
 
 

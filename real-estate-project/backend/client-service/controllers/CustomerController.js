@@ -1,9 +1,10 @@
 import { Customer } from '../models/Database.js';
 
 export class CustomerController {
+    
     static async createCustomer(req, res) {
         const { credentialsId, name, surname, phone } = req.body;
-        const fields = ['credentialsId', 'name', 'surname']; // Aggiunto credentialsId
+        const fields = ['credentialsId', 'name', 'surname']; 
         if (!fields.every(field => req.body[field])) {
             throw new Error('Tutti i campi obbligatori (credentialsId, name, surname) devono essere forniti');
         }
@@ -29,6 +30,7 @@ export class CustomerController {
         return customers;
     }
 
+    // MODIFICATO: Rimosso il recupero dell'email. Ritorna solo i dati del DB locale.
     static async getCustomerById(customerId) {
         const customer = await Customer.findByPk(customerId);
         if (!customer) {
@@ -51,144 +53,72 @@ export class CustomerController {
 
         try {
             const { id } = req.params; 
-            const { email, password, name, surname, phone } = req.body;
-            const { userId, role } = req;
+            const { name, surname, phone } = req.body;
 
-            console.log('Richiesta updateCustomer - ID:', id, 'Body:', req.body, 'User:', { userId, role });
-
-            // Cerca il customer usando credentialsID
             const customer = await Customer.findOne({
                 where: { id: id }
             });
+            
             if (!customer) {
-                console.log('Customer non trovato per credentialsId:', id);
                 res.status(404).json({ error: 'Customer non trovato' });
                 responseSent = true;
                 return;
             }
 
-            // Aggiorna i campi del Customer
             const updateData = {
                 name: name || customer.name,
                 surname: surname || customer.surname,
                 phone: phone !== undefined ? phone : customer.phone
             };
-            console.log('Dati da aggiornare in Customer:', updateData);
-            const updatedCustomer = await customer.update(updateData); // Restituisce l'istanza aggiornata
-            console.log('Customer aggiornato:', updatedCustomer.toJSON());
+            
+            await customer.update(updateData);
+            
+            // Nessuna gestione email/password qui
 
-            // Se email o password sono forniti, chiama l'auth-service
-            if (email || password) {
-                const authServiceUrl = 'http://localhost:3001/credentials/' + id;
-                const credentialsUpdateData = {};
-                if (email) credentialsUpdateData.email = email;
-                if (password) credentialsUpdateData.password = password;
-
-                console.log('Chiamata a auth-service per credentialsId:', id, 'Dati:', credentialsUpdateData);
-                const fetchResponse = await fetch(authServiceUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(credentialsUpdateData)
-                });
-
-                if (!fetchResponse.ok) {
-                    const errorData = await fetchResponse.json();
-                    console.error('Errore dal auth-service:', fetchResponse.status, errorData);
-                    res.status(fetchResponse.status).json({ error: errorData.error || 'Errore nella sincronizzazione con auth-service' });
-                    responseSent = true;
-                    return;
-                }
-                console.log('Risposta dal auth-service:', await fetchResponse.json());
-            }
-
-            // Successo
-            res.status(200).json({ message: 'Customer aggiornato con successo' });
+            res.status(200).json({ message: 'Profilo aggiornato con successo' });
             responseSent = true;
         } catch (error) {
             if (!responseSent) {
-                console.error('Errore nell\'aggiornamento del customer:', error);
-                res.status(500).json({ error: error.message || 'Errore interno del server' });
+                console.error('Errore update customer:', error);
+                res.status(500).json({ error: error.message || 'Errore interno' });
             }
         }
     }
 
     static async deleteCustomer(req, res) {
         let responseSent = false;
-
         try {
             const { id } = req.params; 
-            const { userId, role } = req.user;
+            const { userId, role } = req;
 
-            console.log('Richiesta deleteCustomer - ID:', id, 'User:', { userId, role }, 'Header Authorization ricevuto:', req.headers.authorization);
-
-            // Cerca il customer usando credentialsId
             const customer = await Customer.findOne({
-                where: { credentialsId: id }
+                where: { id: id }
             });
             if (!customer) {
-                console.log('Customer non trovato per credentialsId:', id);
                 res.status(404).json({ error: 'Customer non trovato' });
                 responseSent = true;
                 return;
             }
 
-            // Autorizza admin o il customer stesso
-            if (role !== 'admin' && parseInt(userId) !== customer.credentialsId) {
-                console.log('Autorizzazione fallita per userId:', userId, 'e CredentialsId:', customer.credentialsId);
-                res.status(403).json({ error: 'Non autorizzato a eliminare questo customer' });
+            if (role !== 'admin' && parseInt(userId) !== customer.id) {
+                res.status(403).json({ error: 'Non autorizzato' });
                 responseSent = true;
                 return;
             }
 
-            // Elimina prima le credenziali dal auth-service
-            const authServiceUrl = 'http://localhost:3001/credentials/' + id;
-            const authToken = req.headers.authorization; // Usa il token ricevuto
-            if (!authToken || !authToken.startsWith('Bearer ')) {
-                console.error('Token mancante o formato errato nel deleteCustomer:', authToken);
-                res.status(401).json({ error: 'Token mancante o formato errato' });
-                responseSent = true;
-                return;
-            }
 
-            console.log('Chiamata DELETE a auth-service:', authServiceUrl, 'con token:', authToken);
-            const fetchResponse = await fetch(authServiceUrl, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': authToken // Passa il token originale
-                }
-            });
-
-            if (!fetchResponse.ok) {
-                const errorData = await fetchResponse.json().catch(() => ({ error: 'Errore sconosciuto dal auth-service' }));
-                console.error('Errore dal auth-service:', fetchResponse.status, errorData);
-                res.status(fetchResponse.status).json({ error: errorData.error || 'Errore nella sincronizzazione con auth-service' });
-                responseSent = true;
-                return;
-            }
-            console.log('Risposta dal auth-service:', await fetchResponse.json());
-
-            // Elimina il customer
-            console.log('Eliminazione del customer con CustomerID:', customer.id);
             await customer.destroy();
-            console.log('Customer eliminato con successo');
-
             res.status(200).json({ message: 'Customer eliminato con successo' });
             responseSent = true;
         } catch (error) {
             if (!responseSent) {
-                console.error('Errore nell\'eliminazione del customer:', error);
-                res.status(500).json({ error: error.message || 'Errore interno del server' });
+                res.status(500).json({ error: error.message });
             }
         }
     }
 
     static async getCustomerId(req){
-
         const credentialsId = req.params.id;
-
         const customerId = await Customer.findOne({
             where: { credentialsId: credentialsId },
             attributes: ['id'],
@@ -197,7 +127,6 @@ export class CustomerController {
         if (!customerId) {
             throw new Error('Customer not found');
         }
-
         return customerId
     }
 }

@@ -107,6 +107,10 @@ export const authenticationRouter = express.Router();
     }
   });
 
+  authenticationRouter.get('/credentials/:id', enforceAuthentication, async (req, res) => {
+      await AuthController.getCredentialsById(req, res);
+  });
+
   // Route per aggiornare le credenziali
   authenticationRouter.put('/credentials/:id', enforceAuthentication, async (req, res) => {
       try {
