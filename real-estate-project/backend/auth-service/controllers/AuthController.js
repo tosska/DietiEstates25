@@ -101,26 +101,54 @@ export class AuthController {
     }
 
 
-    static async updateCredentials(req, res) {
-        try {
-            const { id } = req.params;
-            const { email, password } = req.body;
 
-            const credentials = await Credentials.findByPk(id);
-            if (!credentials) {
-                return res.status(404).json({ error: 'Credenziali non trovate' });
-            }
+    static async updateCredentials(credentialId, email, password) {
+        
 
-            const updateData = {};
-            if (email) updateData.email = email;
-            if (password) updateData.password = password; // Verrà hashatto dal set hook
-            await credentials.update(updateData);
-
-            return res.status(200).json({ message: 'Credenziali aggiornate con successo' });
-        } catch (error) {
-            console.error('Errore nell\'aggiornamento delle credenziali:', error);
-            return res.status(500).json({ error: 'Errore interno del server' });
+        const credentials = await Credentials.findByPk(credentialId);
+        if (!credentials) {
+            throw new Error('Credentials not found');
         }
+
+        const updateData = {};
+        if (email) updateData.email = email;
+        if (password) updateData.password = password; // Verrà hashatto dal set hook
+        await credentials.update(updateData);
+
+        return { message: 'Credenziali aggiornate con successo' };
+        
+    }
+
+    static async updateCredentialsT(credentialId, email, password) {
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+        if(!email || !password){
+            throw new Error('Email and/or Password missing');
+        }
+
+        if (!emailRegex.test(email)) {
+            throw new Error('Formato email non valido');
+        }
+
+        if(!passwordRegex.test(password)) {
+            throw new Error('Password debole: deve contenere almeno 8 caratteri, una lettera e un numero');
+        }
+
+        const credentials = await Credentials.findByPk(credentialId);
+        if (!credentials) {
+            throw new Error('Credentials not found');
+        }
+        
+        const updateData = {};
+        updateData.email = email;
+        updateData.password = password;
+        
+        await credentials.update(updateData);
+
+        return { message: 'Credenziali aggiornate con successo' };
+        
     }
 
     static async deleteCredentials(req, res) {
