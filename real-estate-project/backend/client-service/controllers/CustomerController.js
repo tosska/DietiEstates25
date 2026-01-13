@@ -2,12 +2,11 @@ import { Customer } from '../models/Database.js';
 
 export class CustomerController {
     
-    static async createCustomer(req, res) {
-        const { credentialsId, name, surname, phone } = req.body;
-        const fields = ['credentialsId', 'name', 'surname']; 
-        if (!fields.every(field => req.body[field])) {
+    static async createCustomer(credentialsId, name, surname, phone) {
+
+        if (!credentialsId || !name || !surname) {
             throw new Error('Tutti i campi obbligatori (credentialsId, name, surname) devono essere forniti');
-        }
+        }   
 
         const customer = await Customer.create({
             credentialsId: credentialsId,
@@ -19,6 +18,34 @@ export class CustomerController {
 
         return {
             message: 'Customer creato con successo',
+            customerId: customer.id,
+        };
+    }
+
+
+    static async createCustomerT(credentialsId, name, surname, phone) {
+
+        if (!credentialsId || !name || !surname) {
+            throw new Error('Tutti i campi obbligatori (credentialsId, name, surname) devono essere forniti');
+        }   
+
+        if(phone) {
+            const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format
+            if(!phoneRegex.test(phone)) {
+                throw new Error('Invalid phone number format');
+            }
+        }
+
+        const customer = await Customer.create({
+            credentialsId: credentialsId,
+            name: name,
+            surname: surname,
+            phone: phone || null,
+            registrationDate: new Date(),
+        });
+
+        return {
+            message: 'Customer created successfully',
             customerId: customer.id,
         };
     }
