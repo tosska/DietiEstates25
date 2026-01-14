@@ -2,8 +2,10 @@ import { Sequelize } from "sequelize";
 import { createListingModel } from "./Listing.js";
 import { createAddressModel } from "./Address.js";
 import { createPhotoModel } from "./Photo.js";
+import { createCategoryModel } from "./Category.js";
 
 import 'dotenv/config.js';  // Legge il file .env e lo rende disponibile in process.env
+
 
 export const database = new Sequelize(process.env.DB_CONNECTION_URI, {
     dialect: process.env.DIALECT
@@ -13,9 +15,10 @@ export const database = new Sequelize(process.env.DB_CONNECTION_URI, {
 createListingModel(database);
 createAddressModel(database);
 createPhotoModel(database);
+createCategoryModel(database);
 
 // Esporta i modelli
-export const { Listing, Address, Photo } = database.models;
+export const { Listing, Address, Photo, Category } = database.models;
 
 
 // Address haOne Property (1:1)
@@ -33,6 +36,20 @@ Listing.hasMany(Photo, {
 });
 Photo.belongsTo(Listing, { 
     foreignKey: "listingId" 
+});
+
+// Definizione della relazione molti-a-molti
+Listing.belongsToMany(Category, { 
+    through: 'ListingCategories', // Nome della tabella di giunzione nel DB
+    foreignKey: 'listingId',      // Chiave che punta a Listing
+    otherKey: 'categoryId',       // Chiave che punta a Category
+    onDelete: 'CASCADE'           // Se elimini un annuncio, elimina i suoi legami
+});
+
+Category.belongsToMany(Listing, { 
+    through: 'ListingCategories',
+    foreignKey: 'categoryId',
+    otherKey: 'listingId'
 });
 
 

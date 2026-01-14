@@ -7,7 +7,9 @@ export const customerRouter = express.Router();
 // Create: Crea un nuovo customer (richiede autenticazione)
 customerRouter.post('/customers', async (req, res) => {
     try {
-        const result = await CustomerController.createCustomer(req, res);
+        const { credentialsId, name, surname, phone } = req.body;
+
+        const result = await CustomerController.createCustomer(credentialsId, name, surname, phone);
         res.status(201).json(result);
     } catch (error) {
         res.status(400).json({ message: error.message });

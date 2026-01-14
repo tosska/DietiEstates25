@@ -54,6 +54,10 @@ export function createListingModel(database) {
             type: DataTypes.ENUM('A4','A3','A2','A1', 'A', 'B', 'C', 'D', 'E', 'F', 'G'),
             allowNull: true
         },
+        nearByFeatures:{
+            type: DataTypes.JSON,
+            allowNull: true
+        },
         agencyId:{
             type: DataTypes.INTEGER,
             allowNull: false,

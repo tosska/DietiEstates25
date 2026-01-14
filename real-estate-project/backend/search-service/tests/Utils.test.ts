@@ -16,7 +16,7 @@ describe('GeoUtils.haversine [TypeScript Unit Tests]', () => {
     });
 
     //CASO SUCCESSIVO AL MINIMO
-    // Verifica la formula base: 1° lat ≈ 111.195 km
+    // Verifica la formula base: 1° lat (circa 111.195 km)
     test('Caso 2: Delta di 1 grado latitudine -> ~111.195 km', () => {
         const result: number = Utils.haversine(0, 0, 1, 0);
         
@@ -26,7 +26,7 @@ describe('GeoUtils.haversine [TypeScript Unit Tests]', () => {
 
     // CASO NOMINALE: 
     // Milano (45.4642, 9.1900) -> Roma (41.9028, 12.4964)
-    // Distanza attesa: ~477 km
+    // Distanza attesa: circa 477 km
     test('Caso 3: Milano -> Roma -> ~477 km', () => {
         const miLat = 45.4642, miLon = 9.1900;
         const rmLat = 41.9028, rmLon = 12.4964;
@@ -38,7 +38,7 @@ describe('GeoUtils.haversine [TypeScript Unit Tests]', () => {
     });
 
 
-    // CASO PRECEDENTE AL MASSIMO: gestire il salto tra 179° e -179°
+    // SALTO DELL'ANTIMERIDIANO gestire il salto tra 179° e -179°
     // La distanza dovrebbe essere piccola (2° di long), NON immensa (358°)
     test('Caso 4: Crossing Date Line (179°E -> 179°W) -> Distanza breve', () => {
         // All'equatore, 2 gradi di differenza
@@ -49,7 +49,7 @@ describe('GeoUtils.haversine [TypeScript Unit Tests]', () => {
         expect(result).toBeCloseTo(222.4, 1);
     });
 
-    // CASO MASSIMO: dal Polo Nord all'Equatore
+    // LIMITE GEOMETRICO: dal Polo Nord all'Equatore
     // Verifica che la matematica regga ai poli (cos(90) = 0)
     test('Caso 5: Polo Nord -> Equatore -> ~10,007 km', () => {
         const result: number = Utils.haversine(90, 0, 0, 0);

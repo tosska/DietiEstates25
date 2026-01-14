@@ -1,7 +1,9 @@
 import { AgencyClient } from "../clients/AgencyClient.js";
+import { GeopifyClient } from "../clients/GeopifyClient.js";
 import { OfferClient } from "../clients/OfferClient.js";
-import {Listing, Address, Photo, database} from "../models/Database.js";
+import {Listing, Address, Photo, Category, database} from "../models/Database.js";
 import { ListingPublisher } from "../models/ListingPublisher.js";
+import { ListingService } from "../services/ListingService.js";
 import { PhotoService } from "../services/PhotoService.js";
 
 export class ListingController {
@@ -68,6 +70,11 @@ export class ListingController {
         console.log("Photos saved for listing:", listingPhotos);
 
         await transaction.commit();
+
+        ListingService.saveCategoriesOnListing(listingDB, 
+            addressDB.dataValues.latitude, 
+            addressDB.dataValues.longitude
+        );
         
         //Rimuovo id da address in modo che non crei conflitto sul motore di ricerca (da spostare nel microservizio di ricerca)
         const {id, ...addressWithoutId} = addressDB.dataValues;
