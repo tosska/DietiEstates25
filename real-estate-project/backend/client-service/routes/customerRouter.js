@@ -4,71 +4,79 @@ import { userContextMiddleware } from "../middleware/authMiddleware.js";
 
 export const customerRouter = express.Router();
 
-// Create: Crea un nuovo customer (richiede autenticazione)
+// POST /customers (Registrazione interna)
 customerRouter.post('/customers', async (req, res) => {
     try {
-        const result = await CustomerController.createCustomer(req, res);
+        const result = await CustomerController.createCustomer(req);
         res.status(201).json(result);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        // Se il customer esiste già o mancano dati, torniamo 400
+        const status = error.message.includes('esistente') ? 409 : 400;
+        res.status(status).json({ message: error.message });
     }
 });
 
-// Read: Ottieni tutti i customer (richiede autenticazione)
+// GET /customers (Richiede Auth)
 customerRouter.get('/customers', userContextMiddleware, async (req, res) => {
     try {
-        const customers = await CustomerController.getAllCustomers(req, res);
+        const customers = await CustomerController.getAllCustomers();
         res.status(200).json(customers);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 });
 
-// Read: Ottieni un customer per ID (richiede autenticazione)
+// GET /customer/:id
 customerRouter.get('/customer/:id', userContextMiddleware, async (req, res) => {
     try {
-        const customerId = req.params.id;
-        const customer = await CustomerController.getCustomerById(customerId);
+        const customer = await CustomerController.getCustomerById(req.params.id);
         res.status(200).json(customer);
     } catch (error) {
-        console.log(error);
-        res.status(404).json({ message: error.message });
+        const status = error.message === 'Customer non trovato' ? 404 : 400;
+        res.status(status).json({ message: error.message });
     }
 });
 
-customerRouter.post("/customer-internal/customers/by-ids", (req, res, next) => {
-    const { customerIds } = req.body;
-    CustomerController.getCustomersByIds(customerIds).then(customers => {
-      res.json(customers);
-    }).catch(err => {
-      next(err);
-    });
+// INTERNAL POST: Get by IDs
+customerRouter.post("/customer-internal/customers/by-ids", async (req, res) => {
+    try {
+        const { customerIds } = req.body;
+        const customers = await CustomerController.getCustomersByIds(customerIds);
+        res.json(customers);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
-
-// Update: Aggiorna un customer (richiede autenticazione)
+// PUT /customers/:id
 customerRouter.put('/customers/:id', userContextMiddleware, async (req, res) => {
     try {
-        const result = await CustomerController.updateCustomer(req, res);
+        const result = await CustomerController.updateCustomer(req);
         res.status(200).json(result);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        const status = error.message === 'Customer non trovato' ? 404 : 400;
+        res.status(status).json({ message: error.message });
     }
 });
 
-// Delete: Elimina un customer (richiede autenticazione)
+// DELETE /customers/:id
 customerRouter.delete('/customers/:id', userContextMiddleware, async (req, res) => {
     try {
-        const result = await CustomerController.deleteCustomer(req, res);
+        const result = await CustomerController.deleteCustomer(req);
         res.status(200).json(result);
     } catch (error) {
-        res.status(404).json({ message: error.message });
+        let status = 500;
+        if (error.message === 'Customer non trovato') status = 404;
+        if (error.message === 'Non autorizzato') status = 403;
+        res.status(status).json({ message: error.message });
     }
 });
 
+// INTERNAL GET: Get ID by Credentials
 customerRouter.get('/customer-internal/customer/:id/businessId', async (req, res) => {
     try {
-        const customerId = await CustomerController.getCustomerId(req);
+        // req.params.id qui è il credentialsId
+        const customerId = await CustomerController.getCustomerIdByCredentials(req.params.id);
         res.status(200).json(customerId); 
     } catch (error) {
         res.status(404).json({ message: error.message });

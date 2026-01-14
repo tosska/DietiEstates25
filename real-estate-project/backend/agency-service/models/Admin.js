@@ -16,18 +16,6 @@ export function createModel(database) {
             type: DataTypes.STRING(255),
             allowNull: true,    // per test
         },
-        phone: {
-            type: DataTypes.STRING(255),
-            allowNull: true,    // per test
-        },
-        vatNumber: {
-            type: DataTypes.STRING(255),
-            allowNull: true,
-        },
-        yearsExperience: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
         urlPhoto: {
             type: DataTypes.STRING(255),
             allowNull: true,

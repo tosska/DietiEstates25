@@ -2,18 +2,30 @@ import { Customer } from '../models/Database.js';
 
 export class CustomerController {
     
-    static async createCustomer(req, res) {
+    /**
+     * Crea un nuovo Customer.
+     * Chiamato da Auth-Service durante la registrazione.
+     */
+    static async createCustomer(req) {
         const { credentialsId, name, surname, phone } = req.body;
-        const fields = ['credentialsId', 'name', 'surname']; 
-        if (!fields.every(field => req.body[field])) {
-            throw new Error('Tutti i campi obbligatori (credentialsId, name, surname) devono essere forniti');
+        
+        if (!credentialsId || !name || !surname) {
+            throw new Error('Campi obbligatori mancanti: credentialsId, name, surname');
+        }
+
+        // Verifica duplicati (opzionale, basato su credentialsId che è unique)
+        const existing = await Customer.findOne({ where: { credentialsId } });
+        if (existing) {
+             // Se esiste già, ritorniamo l'ID esistente per idempotenza o lanciamo errore
+             // Qui lanciamo errore per sicurezza
+             throw new Error('Profilo cliente già esistente per queste credenziali');
         }
 
         const customer = await Customer.create({
-            credentialsId: credentialsId,
-            name: name,
-            surname: surname,
-            phone: phone || null,
+            credentialsId,
+            name,
+            surname,
+            phone: phone || 'N/A', // Gestione valore di default
             registrationDate: new Date(),
         });
 
@@ -23,14 +35,12 @@ export class CustomerController {
         };
     }
 
-    static async getAllCustomers(req, res) {
-        const customers = await Customer.findAll({
+    static async getAllCustomers() {
+        return await Customer.findAll({
             attributes: ['id', 'credentialsId', 'name', 'surname', 'phone', 'registrationDate'],
         });
-        return customers;
     }
 
-    // MODIFICATO: Rimosso il recupero dell'email. Ritorna solo i dati del DB locale.
     static async getCustomerById(customerId) {
         const customer = await Customer.findByPk(customerId);
         if (!customer) {
@@ -40,93 +50,52 @@ export class CustomerController {
     }
 
     static async getCustomersByIds(customerIds) {
-        const customers = await Customer.findAll({
-            where: {
-                id: customerIds
-            }});
-
-        return customers;
+        if (!Array.isArray(customerIds)) throw new Error('customerIds deve essere un array');
+        return await Customer.findAll({
+            where: { id: customerIds }
+        });
     }
 
-    static async updateCustomer(req, res) {
-        let responseSent = false;
+    static async updateCustomer(req) {
+        const { id } = req.params; 
+        const { name, surname, phone } = req.body;
 
-        try {
-            const { id } = req.params; 
-            const { name, surname, phone } = req.body;
+        const customer = await Customer.findByPk(id);
+        if (!customer) throw new Error('Customer non trovato');
 
-            const customer = await Customer.findOne({
-                where: { id: id }
-            });
-            
-            if (!customer) {
-                res.status(404).json({ error: 'Customer non trovato' });
-                responseSent = true;
-                return;
-            }
+        await customer.update({
+            name: name || customer.name,
+            surname: surname || customer.surname,
+            phone: phone !== undefined ? phone : customer.phone
+        });
 
-            const updateData = {
-                name: name || customer.name,
-                surname: surname || customer.surname,
-                phone: phone !== undefined ? phone : customer.phone
-            };
-            
-            await customer.update(updateData);
-            
-            // Nessuna gestione email/password qui
+        return { message: 'Profilo aggiornato con successo', customer };
+    }
 
-            res.status(200).json({ message: 'Profilo aggiornato con successo' });
-            responseSent = true;
-        } catch (error) {
-            if (!responseSent) {
-                console.error('Errore update customer:', error);
-                res.status(500).json({ error: error.message || 'Errore interno' });
-            }
+    static async deleteCustomer(req) {
+        const { id } = req.params; 
+        const { userId, role } = req; // Dal middleware
+
+        const customer = await Customer.findByPk(id);
+        if (!customer) throw new Error('Customer non trovato');
+
+        // Controllo permessi: Solo Admin o il proprietario del profilo
+        if (role !== 'admin' && parseInt(userId) !== parseInt(customer.id)) {
+            throw new Error('Non autorizzato'); 
         }
+
+        await customer.destroy();
+        return { message: 'Customer eliminato con successo' };
     }
 
-    static async deleteCustomer(req, res) {
-        let responseSent = false;
-        try {
-            const { id } = req.params; 
-            const { userId, role } = req;
-
-            const customer = await Customer.findOne({
-                where: { id: id }
-            });
-            if (!customer) {
-                res.status(404).json({ error: 'Customer non trovato' });
-                responseSent = true;
-                return;
-            }
-
-            if (role !== 'admin' && parseInt(userId) !== customer.id) {
-                res.status(403).json({ error: 'Non autorizzato' });
-                responseSent = true;
-                return;
-            }
-
-
-            await customer.destroy();
-            res.status(200).json({ message: 'Customer eliminato con successo' });
-            responseSent = true;
-        } catch (error) {
-            if (!responseSent) {
-                res.status(500).json({ error: error.message });
-            }
-        }
-    }
-
-    static async getCustomerId(req){
-        const credentialsId = req.params.id;
-        const customerId = await Customer.findOne({
+    // Metodo interno per recuperare ID dal credentialsId
+    static async getCustomerIdByCredentials(credentialsId) {
+        const customer = await Customer.findOne({
             where: { credentialsId: credentialsId },
             attributes: ['id'],
         });
 
-        if (!customerId) {
-            throw new Error('Customer not found');
-        }
-        return customerId
+        if (!customer) throw new Error('Customer not found for these credentials');
+        return customer;
     }
 }

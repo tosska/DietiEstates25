@@ -1,5 +1,5 @@
-import { AgencyClient } from '../clients/agencyClient.js';
-import { CustomerClient } from '../clients/customerClient.js';
+import { AgencyClient } from '../clients/AgencyClient.js';
+import { CustomerClient } from '../clients/CustomerClient.js';
 
 
 export class AuthService {

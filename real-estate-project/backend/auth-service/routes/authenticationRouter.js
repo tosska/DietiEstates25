@@ -162,14 +162,20 @@ export const authenticationRouter = express.Router();
     }
   });
 
-  // Route per la registrazione di un'agenzia
+  // --- ROTTA REGISTRAZIONE AGENZIA CORRETTA ---
   authenticationRouter.post('/register/agency', async (req, res) => {
-    try {
-      const result = await AuthController.registerCompany(req, res);
-      res.status(201).json(result);
-    } catch (error) {
-      res.status(error.message.includes('Solo un Manager') ? 403 : 500).json({ message: error.message });
-    }
+      try {
+          // Il controller esegue la logica e ritorna i dati (SENZA inviare res)
+          const result = await AuthController.registerCompany(req);
+          
+          // Inviamo la risposta qui
+          res.status(201).json(result);
+      } catch (error) {
+          // Gestiamo l'errore qui
+          if (!res.headersSent) {
+              res.status(500).json({ message: error.message });
+          }
+      }
   });
 
   // Route per la validazione del token 

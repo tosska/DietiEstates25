@@ -1,165 +1,105 @@
 import { Agency, Address, Admin, database } from '../models/Database.js';
-import { createHash } from 'crypto';
-
 
 export class AgencyController {
-    // Recupera tutte le agenzie
-    static async getAllAgencies(req, res) {
-        const agencies = await Agency.findAll({
+
+    // Recupera tutte le agenzie con indirizzo e manager
+    static async getAllAgencies() {
+        return await Agency.findAll({
             include: [
                 { model: Address, as: 'Address' },
-                { model: Admin, as: 'ManagerAdmin', attributes: ['AdminID', 'Email'] },
+                { model: Admin, as: 'ManagerAdmin', attributes: ['id', 'name', 'surname'] }, // Nota: AdminID corretto in 'id' se il model è 'id'
             ],
-            attributes: ['AgencyId', 'Phone', 'Description', 'VAT_Number', 'Website', 'ManagerAdmin_ID', 'Address_ID'],
+            // attributes: [...] // Seleziona solo se necessario, altrimenti *
         });
-        return agencies;
     }
 
-    // Crea una nuova agenzia con il relativo indirizzo
-    static async createAgency(req, res) {
-        console.log('REQ.BODY COMPLETO:', req.body);
-
-        const {
-            email, password, phone, description,
-            vatNumber, website,
-            street, houseNumber, city, postalCode, state, country,
-            unitDetail, longitude, latitude
-        } = req.body;
-
-        let transaction;
+    /**
+     * TRANSACTIONAL: Crea Indirizzo -> Agenzia -> Admin(Manager) -> Aggiorna Agenzia
+     * Chiamato internamente da Auth-Service durante la registrazione
+     */
+    static async createFullAgency(data) {
+        const transaction = await database.transaction();
 
         try {
-            transaction = await database.transaction();
+            const { 
+                credentialsId, 
+                name, surname,
+                phone, description, vatNumber, website,
+                street, houseNumber, city, postalCode, state, country, unitDetail, longitude, latitude
+            } = data;
 
-            // 1️⃣ CREA ADDRESS
+            // 1. Indirizzo
             const address = await Address.create({
-            street,
-            houseNumber,
-            city,
-            postalCode,
-            state,
-            country,
-            unitDetail,
-            longitude,
-            latitude,
+                street, houseNumber, city, postalCode, state, country, unitDetail, longitude, latitude
             }, { transaction });
 
-            console.log('Indirizzo creato con ID:', address.id);
-
-            // 2️⃣ CREA AGENCY
+            // 2. Agenzia
             const agency = await Agency.create({
-            phone,
-            description,
-            vatNumber,
-            website,
-            addressId: address.id,
-            managerAdminId: null, // ✅ campo corretto
+                phone, description, vatNumber, website,
+                addressId: address.id,
             }, { transaction });
 
-            console.log('Agenzia creata con ID:', agency.agencyId);
-
-            // 3️⃣ REGISTRA MANAGER (AUTH SERVICE)
-            const managerResponse = await fetch('http://localhost:3001/register/manager', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email,
-                password,
-                role: 'manager',
+            // 3. Admin (Manager)
+            const admin = await Admin.create({
+                credentialsId: credentialsId,
                 agencyId: agency.agencyId,
-            }),
-            });
+                manager: true,
+                role: 'manager', // Aggiunto per chiarezza nel DB
+                name: name || null,       
+                surname: surname || null  
+            }, { transaction });
 
-            if (!managerResponse.ok) {
-            const err = await managerResponse.json();
-            throw new Error(err.message);
-            }
+            // 4. Link Manager -> Agenzia
+            await agency.update({ managerAdminId: admin.id }, { transaction });
 
-            const managerData = await managerResponse.json();
-            const adminId = managerData.userId;
-
-            // 4️⃣ COLLEGA MANAGER ALL’AGENCY
-            await agency.update(
-            { managerAdminId: adminId },
-            { transaction }
-            );
-
-            // 5️⃣ COMMIT
             await transaction.commit();
 
-            return {
-            agencyId: agency.agencyId,
-            adminId,
-            token: managerData.token,
-            };
+            return { agencyId: agency.agencyId, adminId: admin.id };
 
         } catch (error) {
-            if (transaction) await transaction.rollback();
-            console.error('Errore in createAgency:', error);
-            throw error;
+            await transaction.rollback();
+            console.error('Errore transazione Agency:', error);
+            throw new Error('Errore creazione dati agenzia: ' + error.message);
         }
-        }
+    }
 
-
-
-    static async getAgencyById(req, res) {
-        const agencyId = req.params.agencyId;
-        return Agency.findByPk(agencyId, {
+    static async getAgencyById(agencyId) {
+        const agency = await Agency.findByPk(agencyId, {
             include: [
                 { model: Address, as: 'Address' },
-                { model: Admin, as: 'ManagerAdmin', attributes: ['AdminID', 'Email'] },
+                { model: Admin, as: 'ManagerAdmin', attributes: ['id', 'name'] },
             ],
         });
-    }
-
-    static async getAgencyNameById(agencyId) {
-
-        console.log("sono arricato")
-        return Agency.findByPk(agencyId, {
-            attributes: ['name'],
-        });
-    }
-
-    static async getAgencyByAdmin(req, res) {
-        const { adminId } = req.params;
-
-        if (!adminId) {
-        return res.status(400).json({ message: 'adminId mancante' });
-        }
-
-        const admin = await Admin.findByPk(adminId);
-
-        if (!admin) {
-        return res.status(404).json({ message: 'Admin non trovato' });
-        }
-
-        if (!admin.agencyId) {
-        return res.status(404).json({ message: 'Admin senza agenzia associata' });
-        }
-
-        return res.status(200).json({
-        agencyId: admin.agencyId
-        });
-    }
-
-    static async getMyAgency(req) {
-        const adminId = req.user.userId; // dal token JWT
-
-        if (!adminId) {
-            throw new Error('Admin non autenticato');
-        }
-
-        const agency = await Agency.findOne({
-            where: { managerAdminId: adminId }
-        });
-
-        if (!agency) {
-            throw new Error('Agenzia non trovata');
-        }
-
+        if (!agency) throw new Error('Agenzia non trovata');
         return agency;
     }
 
+    static async getAgencyNameById(agencyId) {
+        const agency = await Agency.findByPk(agencyId, { attributes: ['name'] }); // Assicurati che il campo 'name' esista in Agency se lo usi, altrimenti 'description' o altro
+        // Se nel model Agency non c'è 'name', usa description o rimuovi questo metodo se non serve
+        if (!agency) throw new Error('Agenzia non trovata');
+        return agency; // o agency.name
+    }
 
+    // Refattorizzato: Ritorna dati, non usa res
+    static async getAgencyByAdmin(req) {
+        const { adminId } = req.params;
+        if (!adminId) throw new Error('adminId mancante');
 
+        const admin = await Admin.findByPk(adminId);
+        if (!admin) throw new Error('Admin non trovato');
+        if (!admin.agencyId) throw new Error('Admin senza agenzia associata');
+
+        return { agencyId: admin.agencyId };
+    }
+
+    static async getMyAgency(req) {
+        const adminId = req.user.userId; // dal token JWT decodificato nel middleware
+        if (!adminId) throw new Error('Admin non autenticato');
+
+        const agency = await Agency.findOne({ where: { managerAdminId: adminId } });
+        if (!agency) throw new Error('Agenzia non trovata per questo manager');
+
+        return agency;
+    }
 }
