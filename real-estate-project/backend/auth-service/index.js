@@ -2,6 +2,9 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import { authenticationRouter } from "./routes/authenticationRouter.js";
+import { initDatabase } from "./models/Database.js";
+
+initDatabase();
 
 const app = express(); // creates an express application
 const PORT = 3001;

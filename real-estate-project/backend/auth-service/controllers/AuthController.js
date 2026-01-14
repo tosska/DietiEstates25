@@ -53,6 +53,119 @@ export class AuthController {
     // --- REGISTRAZIONI (REFATTORIZZATE) ---
 
     // 1. REGISTRAZIONE CLIENTE
+
+    static async updateCredentials(credentialId, email, password) {
+        
+
+        const credentials = await Credentials.findByPk(credentialId);
+        if (!credentials) {
+            throw new Error('Credentials not found');
+        }
+
+        const updateData = {};
+        if (email) updateData.email = email;
+        if (password) updateData.password = password; // Verrà hashatto dal set hook
+        await credentials.update(updateData);
+
+        return { message: 'Credenziali aggiornate con successo' };
+        
+    }
+
+    static async updateCredentialsT(credentialId, email, password) {
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+        if(!email || !password){
+            throw new Error('Email and/or Password missing');
+        }
+
+        if (!emailRegex.test(email)) {
+            throw new Error('Formato email non valido');
+        }
+
+        if(!passwordRegex.test(password)) {
+            throw new Error('Password debole: deve contenere almeno 8 caratteri, una lettera e un numero');
+        }
+
+        const credentials = await Credentials.findByPk(credentialId);
+        if (!credentials) {
+            throw new Error('Credentials not found');
+        }
+        
+        const updateData = {};
+        updateData.email = email;
+        updateData.password = password;
+        
+        await credentials.update(updateData);
+
+        return { message: 'Credenziali aggiornate con successo' };
+        
+    }
+
+    static async deleteCredentials(req, res) {
+        let responseSent = false;
+
+        try {
+            const { id } = req.params;
+            // Estraiamo authId dal token decodificato (req.user)
+            const { userId, role, authId } = req.user; 
+
+            console.log('Richiesta deleteCredentials - ID:', id, 'Token AuthID:', authId);
+
+            const credentials = await Credentials.findByPk(id);
+            if (!credentials) {
+                res.status(404).json({ message: 'Credenziali non trovate' });
+                responseSent = true;
+                return;
+            }
+
+            // CORREZIONE FONDAMENTALE:
+            // Confrontiamo l'authId del token (es. 80) con l'ID richiesto (es. 80).
+            // NON usare userId (es. 7) qui.
+            if (role !== 'admin' && parseInt(authId) !== parseInt(id)) {
+                console.log(`Accesso negato: Token AuthID ${authId} vs Richiesto ${id}`);
+                res.status(403).json({ message: 'Non autorizzato' });
+                responseSent = true;
+                return;
+            }
+
+            // Elimina SOLO le credenziali.
+            // La cancellazione a cascata del Customer deve essere gestita dal DB (ON DELETE CASCADE).
+            await credentials.destroy();
+            console.log('Credenziali eliminate con successo.');
+
+            res.status(200).json({ message: 'Credenziali eliminate con successo' });
+            responseSent = true;
+        } catch (error) {
+            if (!responseSent) {
+                console.error('Errore nell\'eliminazione delle credenziali:', error);
+                res.status(500).json({ message: `Errore durante l'eliminazione: ${error.message}` });
+            }
+        }
+    }
+
+    static issueToken(authId, userId, role) {
+        try {
+            return { token: Jwt.sign({ authId, userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s`, issuer: 'auth-service' }) };
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    static async validateToken(req, res) {
+        const { token } = req.body;
+        if (!token) {
+            throw new Error('Token mancante nel corpo della richiesta');
+        }
+        const decoded = Jwt.verify(token, process.env.TOKEN_SECRET || 'your-secret-key');
+        return {
+            authId: decoded.authId,
+            userId: decoded.userId,
+            role: decoded.role,
+        };
+    }
+
     static async registerCustomer(req, res) {
         const { email, password, name, surname, phone } = req.body;
         if (!email || !password) throw new Error('Email e password obbligatori');

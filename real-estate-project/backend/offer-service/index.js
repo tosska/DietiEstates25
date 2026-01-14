@@ -3,9 +3,20 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import { offerRouter } from "./routes/offerRouter.js";
+import { database } from "./models/Database.js";
 
 const app = express(); // creates an express application
 const PORT = 3004;
+
+
+// Sincronizzazione del database
+database.sync()  
+    .then(() => {
+        console.log("Database sincronizzato correttamente");
+    })
+    .catch(err => {
+        console.error("Errore nella sincronizzazione del database: " + err.message);
+    });
 
 app.use(cors()); 
 

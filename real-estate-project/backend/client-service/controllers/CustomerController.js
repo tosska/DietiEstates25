@@ -21,6 +21,10 @@ export class CustomerController {
              throw new Error('Profilo cliente già esistente per queste credenziali');
         }
 
+        if (!credentialsId || !name || !surname) {
+            throw new Error('Tutti i campi obbligatori (credentialsId, name, surname) devono essere forniti');
+        }   
+
         const customer = await Customer.create({
             credentialsId,
             name,
@@ -35,8 +39,35 @@ export class CustomerController {
         };
     }
 
-    static async getAllCustomers() {
-        return await Customer.findAll({
+    static async createCustomerT(credentialsId, name, surname, phone) {
+
+        if (!credentialsId || !name || !surname) {
+            throw new Error('Tutti i campi obbligatori (credentialsId, name, surname) devono essere forniti');
+        }   
+
+        if(phone) {
+            const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format
+            if(!phoneRegex.test(phone)) {
+                throw new Error('Invalid phone number format');
+            }
+        }
+
+        const customer = await Customer.create({
+            credentialsId: credentialsId,
+            name: name,
+            surname: surname,
+            phone: phone || null,
+            registrationDate: new Date(),
+        });
+
+        return {
+            message: 'Customer created successfully',
+            customerId: customer.id,
+        };
+    }
+
+    static async getAllCustomers(req, res) {
+        const customers = await Customer.findAll({
             attributes: ['id', 'credentialsId', 'name', 'surname', 'phone', 'registrationDate'],
         });
     }

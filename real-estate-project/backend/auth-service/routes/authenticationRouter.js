@@ -113,13 +113,22 @@ export const authenticationRouter = express.Router();
 
   // Route per aggiornare le credenziali
   authenticationRouter.put('/credentials/:id', enforceAuthentication, async (req, res) => {
-      try {
-          const result = await AuthController.updateCredentials(req, res);
-          res.status(200).json(result);
-      } catch (error) {
-          res.status(500).json({ message: `Errore durante l'aggiornamento delle credenziali: ${error.message}` });
-      }
+      const { email, password } = req.body;
+      
+      AuthController.updateCredentials(req.params.id, email, password)
+          .then(result => res.json(result)) // Se va bene, risponde 200 con il JSON
+          .catch(next); // Se c'è un errore, lo passa al middleware di gestione errori di Express
   });
+
+  authenticationRouter.put('/me/credentials', enforceAuthentication, (req, res, next) => {
+    
+      const { email, password } = req.body;
+      
+      AuthController.updateCredentials(req.authId, email, password)
+          .then(result => res.json(result)) // Se va bene, risponde 200 con il JSON
+          .catch(next); // Se c'è un errore, lo passa al middleware di gestione errori di Express
+  });
+
 
   // Route per eliminare le credenziali
   authenticationRouter.delete('/credentials/:id', enforceAuthentication, async (req, res) => {

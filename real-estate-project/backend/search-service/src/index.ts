@@ -3,7 +3,6 @@ import { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
 import { searchRouter } from "./routes/searchRouter.js";
-import { ListingConsumer } from "./models/ListingConsumer.js";
 import { SearchEngine } from "./types/SearchEngine.js";
 import { Listing } from "./types/Listing.js";
 import { MeiliSearchEngine } from "./models/MeiliListingSearchEngine.js";

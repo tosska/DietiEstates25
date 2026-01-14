@@ -43,7 +43,7 @@ createCredentialsModel(database);
 // Esporta i modelli
 export const { Credentials } = database.models;
 
-async function initDatabase() {
+export async function initDatabase() {
     try {
         await database.sync();
         console.log("Database sincronizzato correttamente");
@@ -68,4 +68,4 @@ async function initDatabase() {
     }
 }
 
-initDatabase();
+
