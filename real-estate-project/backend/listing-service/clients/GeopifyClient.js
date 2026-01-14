@@ -1,4 +1,5 @@
 import axios from 'axios';
+import 'dotenv/config'; 
 
 export class GeopifyClient {
 
@@ -22,21 +23,21 @@ export class GeopifyClient {
         try {
             const response = await axios.get(this.api_geopify_url, {
                 params: {
-                    categories: categories,
+                    categories: this.categories,
                     // Il filtro 'circle' definisce l'area di ricerca: longitudine,latitudine,raggio
                     filter: `circle:${lon},${lat},${this.radiusMeters}`,
                     bias: `proximity:${lon},${lat}`,
                     limit: 20,
-                    apiKey: apiKey
+                    apiKey: this.apiKey
                 }
             });
-
-            const categories = response.data.features.categories;
+            const features = response.data.features;
+            const allCategories = features.flatMap(f => f.properties.categories);
 
             let tempSet = new Set();
 
             this.categoriesMap.forEach(key => {
-                if(categories.includes(key)) tempSet.add(key);
+                if(allCategories.includes(key)) tempSet.add(key);
             });
             
             return tempSet;

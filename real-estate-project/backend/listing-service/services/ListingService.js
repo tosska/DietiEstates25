@@ -11,15 +11,9 @@ export class ListingService {
     };
 
 
-    static async saveCategoriesOnListing(listing) {
+    static async saveCategoriesOnListing(listing, latitude, longitude) {
 
     try {
-        // Recuperiamo le coordinate dal listing (assumendo siano presenti)
-        const { latitude, longitude } = listing.dataValues;
-
-        if (!latitude || !longitude) {
-            throw new Error("Coordinate geografiche mancanti per l'arricchimento.");
-        }
 
         const categoryNames = await this.#getListingCategories(latitude, longitude);
 
@@ -31,6 +25,8 @@ export class ListingService {
         const categoriesInDb = await Category.findAll({
             where: { name: categoryNames }
         });
+
+        console.log("CATEGORIE TROVATE: ", categoryNames);
 
         await listing.setCategories(categoriesInDb);
         

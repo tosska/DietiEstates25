@@ -1,5 +1,4 @@
 import { AgencyClient } from "../clients/AgencyClient.js";
-import { GeopifyClient } from "../clients/GeopifyClient.js";
 import { OfferClient } from "../clients/OfferClient.js";
 import {Listing, Address, Photo, Category, database} from "../models/Database.js";
 import { ListingPublisher } from "../models/ListingPublisher.js";
@@ -11,7 +10,16 @@ export class ListingController {
     static async getListingById(req){
         const listingId = req.params.listingId;
         let listing = await Listing.findByPk(listingId, {
-            include: [Address, Photo],
+            include: [Address, Photo, 
+             
+            {
+                model: Category,
+                // Qui indichi quali campi vuoi della tabella Category
+                attributes: ['name'], 
+                // Questo serve a non mostrare i dati della tabella di giunzione
+                through: { attributes: [] } 
+            }
+        ],
         });
 
         if(!listing){
@@ -75,7 +83,7 @@ export class ListingController {
             addressDB.dataValues.latitude, 
             addressDB.dataValues.longitude
         );
-        
+
         //Rimuovo id da address in modo che non crei conflitto sul motore di ricerca (da spostare nel microservizio di ricerca)
         const {id, ...addressWithoutId} = addressDB.dataValues;
         const listingToPublish = {...listingDB.dataValues, ...addressWithoutId, mainPhoto: listingPhotos[0] || null};

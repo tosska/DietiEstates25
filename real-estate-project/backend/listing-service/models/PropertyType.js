@@ -1,19 +1,19 @@
 
 import { DataTypes } from "sequelize";
 
-export function createCategoryModel(database) {
-    database.define('Category', {
+export function createPropertyTypeModel(database) {
+    database.define('PropertyType', {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true
         },
         name: {
-            type: DataTypes.STRING, // Es: "school", "park", "bus" 
+            type: DataTypes.STRING,
             allowNull: false
         }
         
-    }, {timestamps: false
+    },{timestamps: false
 
     })
 }

@@ -3,6 +3,7 @@ import { createListingModel } from "./Listing.js";
 import { createAddressModel } from "./Address.js";
 import { createPhotoModel } from "./Photo.js";
 import { createCategoryModel } from "./Category.js";
+import { createPropertyTypeModel } from "./PropertyType.js";
 
 import 'dotenv/config.js';  // Legge il file .env e lo rende disponibile in process.env
 
@@ -16,6 +17,7 @@ createListingModel(database);
 createAddressModel(database);
 createPhotoModel(database);
 createCategoryModel(database);
+createPropertyTypeModel(database);
 
 // Esporta i modelli
 export const { Listing, Address, Photo, Category } = database.models;
@@ -53,7 +55,30 @@ Category.belongsToMany(Listing, {
 });
 
 
+export async function seedCategories(database) {
+    const Category = database.models.Category;
 
+    // Qui inseriamo i nomi tecnici (che userai come identificativi e icone)
+    const defaultCategories = [
+        { name: 'school' },
+        { name: 'park' },
+        { name: 'public_trasport' },
+    ];
+
+    try {
+        for (const cat of defaultCategories) {
+            await Category.findOrCreate({
+                where: { name: cat.name },
+                defaults: cat
+            });
+        }
+        console.log('[Database] Categorie (icone) inizializzate.');
+    } catch (error) {
+        console.error('[Database] Errore durante il seeding:', error);
+    }
+}
+
+seedCategories(database);
 
 // Sincronizzazione del database
 database.sync()  //togliere alter: true (comporta rischi e perdita di dati)

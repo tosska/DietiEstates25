@@ -16,7 +16,7 @@ export function createListingModel(database) {
             allowNull: false
         },
         listingType: {
-            type: DataTypes.ENUM('Sale', 'Rent'), //fare bool?
+            type: DataTypes.ENUM('Sale', 'Rent'), 
             allowNull: false,
         },
         status: {
@@ -52,10 +52,6 @@ export function createListingModel(database) {
         },
         energyClass:{
             type: DataTypes.ENUM('A4','A3','A2','A1', 'A', 'B', 'C', 'D', 'E', 'F', 'G'),
-            allowNull: true
-        },
-        nearByFeatures:{
-            type: DataTypes.JSON,
             allowNull: true
         },
         agencyId:{
