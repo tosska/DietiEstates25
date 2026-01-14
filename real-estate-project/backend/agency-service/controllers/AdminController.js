@@ -1,99 +1,87 @@
-// agency-service/controllers/AdminController.js
 import { Admin, Agency } from '../models/Database.js';
 
 export class AdminController {
 
-    static async createAdmin(req, res) {
+    static async createAdmin(req) {
         try {
             const { credentialsId, name, surname, phone, vatNumber, yearsExperience, urlPhoto } = req.body;
-    
-            if (!credentialsId) {
-                throw new Error('credentialsId mancante');
-            }
+            if (!credentialsId) throw new Error('credentialsId mancante');
 
-            // Recupera admin loggato
-            const creatorAdmin = await Admin.findOne({
-                where: { id: req.userId }
-            });
-
-            if (!creatorAdmin) {
-                throw new Error('Admin non trovato');
-            }
-    
-            // Ricava agencyId dall'admin
+            // Check permessi (Admin deve avere un'agenzia)
+            const creatorAdmin = await Admin.findOne({ where: { id: req.userId } });
+            if (!creatorAdmin) throw new Error('Admin creatore non trovato');
+            
             const agencyId = creatorAdmin.agencyId;
             if (!agencyId) throw new Error('Admin non ha agenzia associata');
-    
-            // Controlla che l'agenzia esista
+
             const agency = await Agency.findByPk(agencyId);
             if (!agency) throw new Error('Agenzia non trovata');
     
-            // Crea admin
             const admin = await Admin.create({
-                credentialsId,
-                agencyId,
-                name,
-                surname,
-                phone,
-                vatNumber,
-                yearsExperience,
-                urlPhoto
+                credentialsId, agencyId, name, surname, phone, vatNumber, yearsExperience, urlPhoto
             });
     
-            console.log('Admin creato con successo:', admin.toJSON());
-    
-            return res.status(201).json({
+            return {
                 message: 'Admin creato con successo',
                 adminId: admin.id,
-            });
-    
+            };
         } catch (err) {
             console.error('Errore createAdmin:', err);
-            return res.status(500).json({ message: err.message });
+            throw err;
         }
     }
 
-    static async createManager(req, res) {
+    static async createManager(req) {
         const { credentialsId, agencyId } = req.body;
-        const fields = ['credentialsId'];
-        if (!fields.every(field => req.body[field])) {
-            throw new Error('Tutti i campi obbligatori (credentialsId) devono essere forniti');
-        }
+        if (!credentialsId) throw new Error('credentialsId mancante');
 
         const admin = await Admin.create({
-            credentialsId: credentialsId,
+            credentialsId,
             agencyId: agencyId || null,
             manager: true,
             role: 'admin',
         });
 
-        return {
-            message: 'Manager creato con successo',
-            adminId: admin.AdminID,
-        };
+        return { message: 'Manager creato con successo', adminId: admin.id };
     }
 
-    static async getAdminById(req, res) {
-        const { id } = req.params;
-        const admin = await Admin.findByPk(id, {
-            attributes: ['id', 'credentialsId', 'Agency_ID', 'Manager', 'role'],
-        });
-
-        if (!admin) {
-            throw new Error('Admin non trovato');
-        }
-
+    static async getAdminById(id) {
+        const admin = await Admin.findByPk(id);
+        if (!admin) throw new Error('Admin non trovato');
         return admin;
     }
 
+    static async updateAdmin(req) {
+        try {
+            const { id } = req.params;
+            const { name, surname, phone, vatNumber, yearsExperience, urlPhoto } = req.body;
+
+            const admin = await Admin.findByPk(id);
+            if (!admin) throw new Error('Admin non trovato');
+
+            await admin.update({
+                name: name !== undefined ? name : admin.name,
+                surname: surname !== undefined ? surname : admin.surname,
+                phone: phone !== undefined ? phone : admin.phone,
+                vatNumber: vatNumber !== undefined ? vatNumber : admin.vatNumber,
+                yearsExperience: yearsExperience !== undefined ? yearsExperience : admin.yearsExperience,
+                urlPhoto: urlPhoto !== undefined ? urlPhoto : admin.urlPhoto
+            });
+
+            return { message: 'Profilo aggiornato', admin };
+        } catch (error) {
+            console.error('Errore updateAdmin:', error);
+            throw error;
+        }
+    }
+
     static async getAdminId(req) {
-
         const credential_id = req.params.id;
-
-        return Admin.findOne({
+        const admin = await Admin.findOne({
             where: { credentialsId: credential_id },
             attributes: ['id'],
         });
+        if (!admin) throw new Error('Admin non trovato per queste credenziali');
+        return admin;
     }
-    
 }

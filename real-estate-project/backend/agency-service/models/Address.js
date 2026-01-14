@@ -32,6 +32,10 @@ export function createModel(database) {
             type: DataTypes.STRING,
             allowNull: false, 
         },
+        state: {                    //provincia/stato interno
+            type: DataTypes.STRING,
+            allowNull: false, 
+        },
         longitude: {
             type: DataTypes.FLOAT(10),
             allowNull: true,

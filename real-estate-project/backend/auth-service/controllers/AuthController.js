@@ -1,52 +1,27 @@
 import { createHash } from 'crypto';
 import { Credentials } from '../models/Database.js';
-import { AgencyClient } from '../clients/agencyClient.js';
 import Jwt from 'jsonwebtoken';
 import { AuthService } from '../services/AuthService.js';
+import { AgencyClient } from '../clients/AgencyClient.js';
+import { CustomerClient } from '../clients/CustomerClient.js'; 
 import { ProviderClient } from '../clients/ProviderClient.js';
-import { auth } from 'google-auth-library';
 
 export class AuthController {
+    
+    // --- LOGIN E CONTROLLI (Logica invariata) ---
+
     static async checkCredentials(req) {
         const { usr, pwd } = req.body;
+        if (!usr || !pwd) throw new Error('Email e password sono obbligatori');
 
-        if (!usr || !pwd) {
-            throw new Error('Email e password sono obbligatori');
-        }
+        const credentials = await Credentials.findOne({ where: { email: usr } });
+        if (!credentials) throw new Error('Invalid credentials 1');
 
-        // 1️⃣ Cerca SOLO per email
-        const credentials = await Credentials.findOne({
-            where: { email: usr }
-        });
-
-        if (!credentials) {
-            throw new Error('Invalid credentials 1');
-        }
-
-        // 2️⃣ Verifica password
         const hashedPwd = createHash('sha256').update(pwd).digest('hex');
+        if (hashedPwd !== credentials.password) throw new Error('Invalid credentials 2');
 
-        console.log('Password hashata:', hashedPwd);
-        console.log('Credentiali memorizzate password:', credentials.password);
-        if (hashedPwd !== credentials.password) {
-            throw new Error('Invalid credentials 2');
-        }
-
-        console.log('Credenziali trovate:', {
-            id: credentials.id,
-            role: credentials.role,
-            mustChangePassword: credentials.mustChangePassword
-        });
-
-        // 3️⃣ Recupera businessId
-        const businessId = await AuthService.getBusinessId(
-            credentials.id,
-            credentials.role
-        );
-
-        if (!businessId) {
-            throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
-        }
+        const businessId = await AuthService.getBusinessId(credentials.id, credentials.role);
+        if (!businessId) throw new Error('Impossibile recuperare l\'ID business');
 
         return {
             authId: credentials.id,
@@ -56,51 +31,28 @@ export class AuthController {
         };
     }
 
-
-
     static async checkCredentialsFromSocial(req) {
-
-        console.log("HO RICEVUTO CHIAMATA A CHECKCREDENTIALS FROM SOCIAL")
-
         const { usr, providerToken, providerName } = req.body;
+        if (!usr || !providerToken || !providerName) throw new Error('Dati social mancanti');
 
-        if (!usr || !providerToken || !providerName) {
-            throw new Error('Email, providerId e providerName sono obbligatori');
-        }
-        console.log('Verifica credenziali social per email:', usr, 'con provider:', providerName);
         const payload = await ProviderClient.validateSocialToken(providerName, providerToken);
-
-        console.log('Payload ricevuto dal provider:', payload);
-
-        if (!payload) {
-            throw new Error('Token social non valido');
-        }
-
-        if(payload.email !== usr) {
-            throw new Error('L\'account social non corrisponde all\'email fornita');
-        }
+        if (!payload || payload.email !== usr) throw new Error('Token social non valido');
 
         const credentials = await Credentials.findOne({
             where: { email: usr, providerId: payload.sub, providerName: providerName },
         });
 
-        if (!credentials) {
-            return null;
-        }
-
-        console.log('Credenziali social trovate:', { id: credentials.id, role: credentials.role });
+        if (!credentials) return null;
 
         const businessId = await AuthService.getBusinessId(credentials.id, credentials.role);
-        if (!businessId) {
-            throw new Error('Impossibile recuperare l\'ID business per le credenziali fornite');
-        }
-
-        console.log("token pre ", { authId: credentials.id, userId: businessId, role: credentials.role });
+        if (!businessId) throw new Error('Impossibile recuperare l\'ID business');
 
         return { authId: credentials.id, userId: businessId, role: credentials.role };
     }
 
+    // --- REGISTRAZIONI (REFATTORIZZATE) ---
 
+    // 1. REGISTRAZIONE CLIENTE
 
     static async updateCredentials(credentialId, email, password) {
         
@@ -215,117 +167,64 @@ export class AuthController {
     }
 
     static async registerCustomer(req, res) {
-        console.log('Richiesta registerCustomer:', req.body);
-        const { email, password, name, surname, phone, providerToken, providerName } = req.body;
-        if (!email || !password) {
-            throw new Error('Email e password sono obbligatori');
-        }
-        const existingCredentials = await Credentials.findOne({ where: { email: email } });
-        if (existingCredentials) {
-            console.log('Email già registrata:', email);
-            throw new Error('Email già registrata');
-        }
+        const { email, password, name, surname, phone } = req.body;
+        if (!email || !password) throw new Error('Email e password obbligatori');
+        
+        const existing = await Credentials.findOne({ where: { email } });
+        if (existing) throw new Error('Email già registrata');
 
-        const newCredentials = await Credentials.create({
-            email: email,
-            password: password, 
-            role: 'customer',
-        });
+        const newCredentials = await Credentials.create({ email, password, role: 'customer' });
 
-        const response = await fetch('http://localhost:3002/customers', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+        try {
+            // Uso il Client invece della fetch manuale
+            const customerResponse = await CustomerClient.createCustomer({
                 credentialsId: newCredentials.id,
                 name: name || 'Nuovo',
                 surname: surname || 'Cliente',
                 phone: phone || null,
-            }),
-            timeout: 10000, // Aggiunto timeout
-        });
-
-        if (!response.ok) {
-            await newCredentials.destroy();
-            const errorData = await response.json();
-            console.log('Errore da customer-service:', errorData);
-            throw new Error(errorData.message || 'Errore durante la creazione del customer');
-        }
-
-        const customerResponse = await response.json();
-
-        return this.issueToken(newCredentials.id, customerResponse.customerId, 'customer');
-    }
-
-    static async registerCustomerFromSocial(req, res) {
-        const { email, name, surname, phone, providerToken, providerName } = req.body;
-
-
-        console.log('Richiesta registerCustomerFromSocial:', req.body);
-
-        // 1. Validazione input minimi
-        if (!email || !providerToken || !providerName) {
-            throw new Error('Email e token social sono obbligatori');
-        }
-
-        // 2. Controllo se l'email esiste già
-        const existingCredentials = await Credentials.findOne({ where: { email } });
-        if (existingCredentials) {
-            throw new Error('Email già registrata nel sistema');
-        }
-
-        // 3. Validazione del token tramite il provider scelto
-        const payload = await ProviderClient.validateSocialToken(providerName, providerToken);
-
-        console.log('Payload ricevuto dal provider:', payload);
-
-        // Verifichiamo che l'email del token corrisponda a quella dichiarata
-        if (!payload || payload.email !== email) {
-            throw new Error('L\'account social non corrisponde all\'email fornita');
-        }
-
-        console.log("payload.sub:", payload.sub);
-
-        // 4. Creazione Credenziali (password null e providerId salvato)
-   
-        const newCredentials = await Credentials.create({
-            email: email,
-            password: null, // Importante: nessuna password locale
-            role: 'customer',
-            providerName: providerName,
-            providerId: payload.sub // Il 'sub' di Google è l'ID univoco permanente
-        });    
-
-        console.log('Nuove credenziali create con ID:', newCredentials);
-
-        try {
-            // 5. Creazione profilo nel customer-service
-            const customerResponse = await fetch('http://localhost:3002/customers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    credentialsId: newCredentials.id,
-                    name: name || payload.given_name,
-                    surname: surname || payload.family_name,
-                    phone: phone 
-                })
             });
 
-            if (!customerResponse.ok) {
-                throw new Error('Errore nella creazione del profilo cliente');
-            }
-
-            // 6. Generazione Token di sessione per l'app
-            return this.issueToken(newCredentials.id, customerResponse.customerId, 'customer');
+            return AuthController.issueToken(newCredentials.id, customerResponse.customerId, 'customer');
 
         } catch (error) {
-            // Rollback se il servizio esterno fallisce
-            await newCredentials.destroy();
+            await newCredentials.destroy(); // Rollback
             throw error;
         }
     }
 
+    // 2. REGISTRAZIONE CLIENTE SOCIAL
+    static async registerCustomerFromSocial(req, res) {
+        const { email, name, surname, phone, providerToken, providerName } = req.body;
+        
+        if (!email || !providerToken || !providerName) throw new Error('Dati social mancanti');
+        const existing = await Credentials.findOne({ where: { email } });
+        if (existing) throw new Error('Email già registrata');
+
+        const payload = await ProviderClient.validateSocialToken(providerName, providerToken);
+        if (!payload || payload.email !== email) throw new Error('Token social non valido');
+
+        const newCredentials = await Credentials.create({
+            email, password: null, role: 'customer', providerName, providerId: payload.sub
+        });    
+
+        try {
+            // Uso il Client
+            const customerResponse = await CustomerClient.createCustomer({
+                credentialsId: newCredentials.id,
+                name: name || payload.given_name,
+                surname: surname || payload.family_name,
+                phone
+            });
+
+            return AuthController.issueToken(newCredentials.id, customerResponse.customerId, 'customer');
+
+        } catch (error) {
+            await newCredentials.destroy(); // Rollback
+            throw error;
+        }
+    }
+
+    // 3. REGISTRAZIONE AGENTE
     static async registerAgent(req, res) {
         try {
             const { role } = req.user;
@@ -333,52 +232,29 @@ export class AuthController {
                 return res.status(403).json({ message: 'Solo un admin può registrare un agent' });
             }
 
-            const { email, password, name, surname, phone, vatNumber, yearsExperience, urlPhoto } = req.body;
-            if (!email || !password) {
-                return res.status(400).json({ message: 'Email e password sono obbligatori' });
-            }
+            const { email, password, ...agentData } = req.body;
+            if (!email || !password) return res.status(400).json({ message: 'Email e password obbligatori' });
 
-            // Crea le credenziali per l'agente
             const newCredentials = await Credentials.create({
-                email,
-                password,
-                role: 'agent',
-                mustChangePassword: true,
+                email, password, role: 'agent', mustChangePassword: true,
             });
 
-            console.log('Nuove credenziali create:', newCredentials.toJSON());
-
-            // Chiama il microservizio agent-service per creare l'agente
-            const response = await fetch('http://localhost:8000/agency-service/agents', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': req.headers.authorization, // Passa il token
-                },
-                body: JSON.stringify({
+            try {
+                // Uso il Client passando il token
+                const data = await AgencyClient.createAgent(req.headers.authorization, {
                     credentialsId: newCredentials.id,
-                    name,
-                    surname,
-                    phone,
-                    vatNumber,
-                    yearsExperience,
-                    urlPhoto
-                }),
-            });
+                    ...agentData
+                });
 
-            if (!response.ok) {
-                const errorData = response.statusText;
-                await newCredentials.destroy(); // rollback credenziali
-                throw new Error(errorData || 'Errore durante la creazione dell\'agent');
+                return res.status(201).json({
+                    message: 'Agent registrato con successo',
+                    userId: newCredentials.id,
+                    agentId: data.agentId,
+                });
+            } catch (err) {
+                await newCredentials.destroy(); // Rollback
+                throw err;
             }
-
-            const data = await response.json();
-
-            return res.status(201).json({
-                message: 'Agent registrato con successo',
-                userId: newCredentials.id,
-                agentId: data.agentId,
-            });
 
         } catch (err) {
             console.error('Errore registerAgent:', err);
@@ -386,60 +262,35 @@ export class AuthController {
         }
     }
 
-
+    // 4. REGISTRAZIONE ADMIN
     static async registerAdmin(req, res) {
         try {
             const { role } = req.user;
-            if (role !== 'manager') {
-                return res.status(403).json({ message: 'Solo un manager può registrare un admin' });
-            }
+            if (role !== 'manager') return res.status(403).json({ message: 'Solo un manager può registrare un admin' });
 
-            const { email, password, name, surname, phone, vatNumber, yearsExperience, urlPhoto } = req.body;
-            if (!email || !password) {
-                return res.status(400).json({ message: 'Email e password sono obbligatori' });
-            }
+            const { email, password, ...adminData } = req.body;
+            if (!email || !password) return res.status(400).json({ message: 'Email e password obbligatori' });
 
-            // Crea le credenziali per l'admin
             const newCredentials = await Credentials.create({
-                email,
-                password,
-                role: 'admin',
-                mustChangePassword: true,
+                email, password, role: 'admin', mustChangePassword: true,
             });
 
-            console.log('Nuove credenziali create:', newCredentials.toJSON());
-
-            // Chiama il microservizio agent-service per creare l'agente
-            const response = await fetch('http://localhost:8000/agency-service/admins', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': req.headers.authorization, // Passa il token
-                },
-                body: JSON.stringify({
+            try {
+                // Uso il Client
+                const data = await AgencyClient.createAdmin(req.headers.authorization, {
                     credentialsId: newCredentials.id,
-                    name,
-                    surname,
-                    phone,
-                    vatNumber,
-                    yearsExperience,
-                    urlPhoto
-                }),
-            });
+                    ...adminData
+                });
 
-            if (!response.ok) {
-                const errorData = response.statusText;
-                await newCredentials.destroy(); // rollback credenziali
-                throw new Error(errorData || 'Errore durante la creazione dell\'admin');
+                return res.status(201).json({
+                    message: 'Admin registrato con successo',
+                    userId: newCredentials.id,
+                    agentId: data.agentId,
+                });
+            } catch (err) {
+                await newCredentials.destroy(); // Rollback
+                throw err;
             }
-
-            const data = await response.json();
-
-            return res.status(201).json({
-                message: 'Admin registrato con successo',
-                userId: newCredentials.id,
-                agentId: data.agentId,
-            });
 
         } catch (err) {
             console.error('Errore registerAdmin:', err);
@@ -447,171 +298,146 @@ export class AuthController {
         }
     }
 
+    // 5. REGISTRAZIONE MANAGER (Legacy)
     static async registerManager(req, res) {
-
         const { email, password, agencyId } = req.body;
-        if (!email || !password) {
-            throw new Error('Email e password sono obbligatori');
-        }
+        if (!email || !password) throw new Error('Email e password obbligatori');
 
-        const newCredentials = await Credentials.create({
-        email: email,
-        password: password,
-        role: 'manager', 
-        });
+        const newCredentials = await Credentials.create({ email, password, role: 'manager' });
 
-        const response = await fetch('http://localhost:3000/manager', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': req.headers.authorization,
-            },
-            body: JSON.stringify({
+        try {
+            // Uso il Client
+            await AgencyClient.createManager(req.headers.authorization, {
                 credentialsId: newCredentials.id,
                 agencyId: agencyId || null,
-                manager: true, // Imposta Manager a true
-            }),
-        });
-
-        if (!response.ok) {
+                manager: true
+            });
+            
+            const token = Jwt.sign({ userId: newCredentials.id, role: 'admin' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: '24h' });
+            return { userId: newCredentials.id, role: 'admin', token };
+        } catch (err) {
             await newCredentials.destroy();
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Errore durante la creazione del manager');
+            throw err;
         }
-
-        const token = Jwt.sign({ userId: newCredentials.ID, role: 'admin' }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: `${24 * 60 * 60}s` });
-        return { userId: newCredentials.id, role: 'admin', token };
     }
 
-    static async registerCompany(req, res) {
-        const { email, password, phone, description, vatNumber, website, street, houseNumber, city, postalCode, state, country, unitDetail, longitude, latitude } = req.body;
+    // 6. REGISTRAZIONE AGENZIA (Orchestratore)
+    static async registerCompany(req) { // Nota: Ritorna i dati, non usa 'res'
+        const { email, password, ...agencyData } = req.body;
+        let newCredentials = null;
 
         try {
-            console.log('Invio richiesta a agency-service:', {
-                email,
-                password,
-                phone,
-                description,
-                vatNumber,
-                website,
-                street,
-                houseNumber,
-                city,
-                postalCode,
-                state,
-                country,
-                unitDetail,
-                longitude,
-                latitude
+            const existing = await Credentials.findOne({ where: { email } });
+            if (existing) throw new Error('Email già registrata');
+
+            newCredentials = await Credentials.create({ email, password, role: 'manager' });
+
+            // Uso il Client
+            const agencyResult = await AgencyClient.setupAgency({
+                credentialsId: newCredentials.id,
+                ...agencyData
             });
 
-            const response = await fetch('http://localhost:3000/agency', { // Corretto il percorso a /api/agency/agency
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email,
-                    password,
-                    phone,
-                    description,
-                    vatNumber,
-                    website,
-                    street,
-                    houseNumber,
-                    city,
-                    postalCode,
-                    state,
-                    country,
-                    unitDetail,
-                    longitude,
-                    latitude
-                }),
-            });
+            const tokenData = AuthController.issueToken(newCredentials.id, agencyResult.adminId, 'manager');
 
-            const responseText = await response.clone().text(); // Clona la risposta per il log
-            console.log('Risposta grezza da agency-service:', responseText);
-
-            if (!response.ok) {
-                const errorData = await response.json(); // Elabora il JSON
-                throw new Error(errorData.message || `Errore ${response.status}: ${responseText}`);
-            }
-
-            const result = await response.json();
             return {
-                message: 'Company and manager registered successfully',
-                agencyId: result.agencyId,
-                adminId: result.adminId,
-                token: result.token,
+                message: 'Registrazione completata',
+                token: tokenData.token,
+                role: 'manager',
+                userId: agencyResult.adminId,
+                agencyId: agencyResult.agencyId
             };
+
         } catch (error) {
-            console.error('Errore in registerCompany:', error);
-            throw new Error(`Failed to register company: ${error.message}`);
+            console.error('Errore registerCompany:', error.message);
+            if (newCredentials) {
+                console.log('Rollback: elimino credenziali...');
+                await newCredentials.destroy();
+            }
+            throw error;
         }
     }
 
+    // --- HELPER METHODS (Invariati) ---
 
-
-    //da cancellare
     static async isTokenValid(token) {
         try {
+            // 1. Verifica firma JWT
             const decoded = Jwt.verify(token, process.env.TOKEN_SECRET || 'your-secret-key');
+            
+            // 2. Verifica se l'utente esiste ancora nel DB
             const credentials = await Credentials.findByPk(decoded.authId);
             if (!credentials) {
-                throw new Error('Utente non trovato');
+                throw new Error('Utente non trovato nel database');
             }
-            return { authId: decoded.authId, userId: decoded.userId, role: decoded.role };
+
+            // 3. Ritorna il payload decodificato per il middleware
+            return { 
+                authId: decoded.authId, 
+                userId: decoded.userId, 
+                role: decoded.role 
+            };
         } catch (error) {
-            throw new Error('Token non valido');
+            throw new Error('Token non valido o scaduto');
         }
     }
 
-
-    static async checkUser(credentialId) {
-
-        let user = await Credentials.findByPk(credentialId);
-
-        if (!user) {
-            throw new Error("User not found");
-        }
-
-        return true;
+    static issueToken(authId, userId, role) {
+        try {
+            return { token: Jwt.sign({ authId, userId, role }, process.env.TOKEN_SECRET || 'your-secret-key', { expiresIn: '24h', issuer: 'auth-service' }) };
+        } catch (error) { console.log(error); }
     }
 
-    static async changePasswordFirstLogin(authId, newPassword) {
-        const credentials = await Credentials.findByPk(authId);
-
-        if (!credentials) {
-            throw new Error('Utente non trovato');
-        }
-
-        credentials.password = newPassword;
-        credentials.mustChangePassword = false;
-
-        await credentials.save();
+    static async validateToken(req, res) {
+        const { token } = req.body;
+        if (!token) throw new Error('Token mancante');
+        const decoded = Jwt.verify(token, process.env.TOKEN_SECRET || 'your-secret-key');
+        return { authId: decoded.authId, userId: decoded.userId, role: decoded.role };
     }
-
 
     static async getCredentialsById(req, res) {
         try {
-            const { id } = req.params;
-            const credentials = await Credentials.findByPk(id);
-            
-            if (!credentials) {
-                return res.status(404).json({ error: 'Credenziali non trovate' });
-            }
-
-            // Restituiamo solo dati sicuri
-            return res.status(200).json({
-                id: credentials.id,
-                email: credentials.email,
-                role: credentials.role
-            });
-        } catch (error) {
-            return res.status(500).json({ error: error.message });
-        }
+            const credentials = await Credentials.findByPk(req.params.id);
+            if (!credentials) return res.status(404).json({ error: 'Credenziali non trovate' });
+            return res.status(200).json({ id: credentials.id, email: credentials.email, role: credentials.role });
+        } catch (error) { return res.status(500).json({ error: error.message }); }
     }
 
+    static async updateCredentials(req, res) {
+        try {
+            const { email, password } = req.body;
+            const credentials = await Credentials.findByPk(req.params.id);
+            if (!credentials) return res.status(404).json({ error: 'Credenziali non trovate' });
+            if (email) credentials.email = email;
+            if (password) credentials.password = password;
+            await credentials.update({ email, password });
+            return res.status(200).json({ message: 'Credenziali aggiornate' });
+        } catch (error) { return res.status(500).json({ error: 'Errore interno' }); }
+    }
 
+    static async deleteCredentials(req, res) {
+        try {
+            const { id } = req.params;
+            const { role, authId } = req.user;
+            const credentials = await Credentials.findByPk(id);
+            if (!credentials) return res.status(404).json({ message: 'Credenziali non trovate' });
+            if (role !== 'admin' && parseInt(authId) !== parseInt(id)) return res.status(403).json({ message: 'Non autorizzato' });
+            await credentials.destroy();
+            return res.status(200).json({ message: 'Credenziali eliminate' });
+        } catch (error) { return res.status(500).json({ message: error.message }); }
+    }
 
+    static async checkUser(id) {
+        const user = await Credentials.findByPk(id);
+        if (!user) throw new Error("User not found");
+        return true;
+    }
+
+    static async changePasswordFirstLogin(id, pwd) {
+        const credentials = await Credentials.findByPk(id);
+        if (!credentials) throw new Error('Utente non trovato');
+        credentials.password = pwd;
+        credentials.mustChangePassword = false;
+        await credentials.save();
+    }
 }
