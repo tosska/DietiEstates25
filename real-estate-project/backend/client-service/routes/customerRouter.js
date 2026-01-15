@@ -1,11 +1,12 @@
 import express from "express";
 import { CustomerController } from "../controllers/CustomerController.js";
 import { userContextMiddleware } from "../middleware/authMiddleware.js";
+import { createCustomerValidation, updateCustomerValidation, idParamValidation } from "../middleware/validation.js";
 
 export const customerRouter = express.Router();
 
 // POST /customers (Registrazione interna)
-customerRouter.post('/customers', async (req, res) => {
+customerRouter.post('/customers', createCustomerValidation, async (req, res) => {
     try {
         const result = await CustomerController.createCustomer(req);
         res.status(201).json(result);
@@ -27,7 +28,7 @@ customerRouter.get('/customers', userContextMiddleware, async (req, res) => {
 });
 
 // GET /customer/:id
-customerRouter.get('/customer/:id', userContextMiddleware, async (req, res) => {
+customerRouter.get('/customer/:id', userContextMiddleware, idParamValidation, async (req, res) => {
     try {
         const customer = await CustomerController.getCustomerById(req.params.id);
         res.status(200).json(customer);
@@ -49,7 +50,7 @@ customerRouter.post("/customer-internal/customers/by-ids", async (req, res) => {
 });
 
 // PUT /customers/:id
-customerRouter.put('/customers/:id', userContextMiddleware, async (req, res) => {
+customerRouter.put('/customers/:id', userContextMiddleware, updateCustomerValidation, async (req, res) => {
     try {
         const result = await CustomerController.updateCustomer(req);
         res.status(200).json(result);
@@ -60,7 +61,7 @@ customerRouter.put('/customers/:id', userContextMiddleware, async (req, res) => 
 });
 
 // DELETE /customers/:id
-customerRouter.delete('/customers/:id', userContextMiddleware, async (req, res) => {
+customerRouter.delete('/customers/:id', userContextMiddleware, idParamValidation, async (req, res) => {
     try {
         const result = await CustomerController.deleteCustomer(req);
         res.status(200).json(result);

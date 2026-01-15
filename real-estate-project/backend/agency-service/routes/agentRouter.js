@@ -4,19 +4,15 @@ import { userContextMiddleware } from "../middleware/authorization.js"
 
 export const agentRouter = express.Router();
 
-// POST /agents
 agentRouter.post('/agents', userContextMiddleware, async (req, res) => {
     try {
-        // Il controller ritorna i dati
         const result = await AgentController.createAgent(req);
         res.status(201).json(result);
     } catch (error) {
-        // Il router gestisce l'errore
         res.status(400).json({ message: error.message });
     }
 });
 
-// GET /agent/:id
 agentRouter.get('/agent/:id', async (req, res) => {
     try {
       const result = await AgentController.getAgentById(req.params.id);
@@ -26,7 +22,6 @@ agentRouter.get('/agent/:id', async (req, res) => {
     }
 });
 
-// PUT /agent/:id
 agentRouter.put('/agent/:id', async (req, res) => {
     try {
         const result = await AgentController.updateAgent(req);
@@ -37,7 +32,6 @@ agentRouter.put('/agent/:id', async (req, res) => {
     }
 });
 
-// INTERNAL GET AgencyId
 agentRouter.get('/agency-internal/agent/:id/agencyId', async (req, res)  => {
     try {
       const agencyId = await AgentController.getAgencyIdByAgentId(req.params.id);
@@ -47,7 +41,6 @@ agentRouter.get('/agency-internal/agent/:id/agencyId', async (req, res)  => {
     }
 });
 
-// INTERNAL GET BusinessId
 agentRouter.get("/agency-internal/agent/:id/businessId", async (req, res) => {
     try {
         const agent = await AgentController.getAgentId(req);
