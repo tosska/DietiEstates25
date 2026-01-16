@@ -29,6 +29,8 @@ export class ListingService {
         console.log("CATEGORIE TROVATE: ", categoryNames);
 
         await listing.setCategories(categoriesInDb);
+
+        return categoryNames;
         
     } catch (error) {
         console.error(`[ListingService Error]: ${error.message}`);

@@ -1,7 +1,10 @@
 import { parse } from "path";
 import { FilterCondition } from "../types/Filter";
 import { GeoFilter } from "../types/GeoFilter";
-import { ListingFilter } from "../types/Listing";
+import { IncomingListing } from "../types/Listing";
+import {ListingFilter} from "../types/Listing";
+import {ListingToIndex} from "../types/Listing";
+
 
 export class Utils {
 
@@ -12,7 +15,7 @@ export class Utils {
         }
         const filtersCondition: FilterCondition[] = [];
 
-        const mappings: [keyof ListingFilter, string, '=' | '>=' | '<='][] = [
+        const mappings: [keyof ListingFilter, string, '=' | '>=' | '<=' | 'IN'][] = [
             ['listing_type', 'listingType', '='],
             ['number_rooms', 'numberRooms', '='],
             ['min_area', 'area', '>='],
@@ -27,9 +30,11 @@ export class Utils {
             ['state', 'state', '='],
             ['postalCode', 'postalCode', '='],
             ['country', 'country', '='],
-            ['unitDetail', 'unitDetail', '='],            
+            ['unitDetail', 'unitDetail', '='],        
+            ['categories', 'categories', 'IN'],   
         ];
 
+   
         for (const [key, field, operator] of mappings) {
             const value = filter[key];
             if (value !== undefined && value !== null) {
@@ -97,6 +102,56 @@ export class Utils {
         return isNaN(num) ? undefined : num;
     }
 
+    public static convertListingObjectToFlatObject(raw: IncomingListing): ListingToIndex {
+        const addr = raw.Address || {};
+
+        // 2. Gestione sicura Categorie
+        let cats: string[] = [];
+        if (Array.isArray(raw.Category)) {
+            // Se è un array di oggetti {name: '...'}, estrai name, altrimenti usa la stringa
+            cats = raw.Category.map((c: any) => (typeof c === 'object' && c.name ? c.name : c));
+        }
+
+        // 4. Helper per le date (assicura che siano stringhe)
+        const toDateString = (d?: string | Date) => d ? new Date(d).toISOString() : '';
+
+        // 5. Costruzione oggetto finale
+        const result: ListingToIndex = {
+            id: raw.id,
+            title: raw.title,
+            price: raw.price,
+            listingType: raw.listingType,
+            status: raw.status,
+            description: raw.description,
+            area: raw.area,
+            numberRooms: raw.numberRooms,
+            propertyType: raw.propertyType,
+            constructionYear: raw.constructionYear,
+            energyClass: raw.energyClass,
+            agencyId: raw.agencyId,
+            agentId: raw.agentId,
+            addressId: raw.addressId,
+
+            // Conversione Date a String
+            publicationDate: toDateString(raw.publicationDate),
+            endPublicationDate: toDateString(raw.endPublicationDate),
+ 
+            // Appiattimento Address
+            street: addr.street || '',
+            city: addr.city || '',
+            postalCode: addr.postalCode || '',
+            state: addr.state || '',
+            unitDetail: addr.unitDetail || '',
+            longitude: addr.longitude || 0,
+            latitude: addr.latitude || 0,
+
+            // Media
+            mainPhoto: raw.mainPhoto,
+            categories: cats
+        };
+
+        return result;
+    }
 
 
 }

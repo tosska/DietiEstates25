@@ -20,7 +20,7 @@ createCategoryModel(database);
 createPropertyTypeModel(database);
 
 // Esporta i modelli
-export const { Listing, Address, Photo, Category } = database.models;
+export const { Listing, Address, Photo, Category, PropertyType } = database.models;
 
 
 // Address haOne Property (1:1)
@@ -29,7 +29,8 @@ Address.hasOne(Listing, {
   onDelete: 'SET NULL' // opzionale: se cancelli l'indirizzo, la property sopravvive
 });
 Listing.belongsTo(Address, {
-  foreignKey: 'addressId'
+  foreignKey: 'addressId',
+  onDelete: 'CASCADE'
 });
 
 Listing.hasMany(Photo, {
@@ -54,10 +55,20 @@ Category.belongsToMany(Listing, {
     otherKey: 'listingId'
 });
 
+// Relazione: Un PropertyType ha molti Listings
+PropertyType.hasMany(Listing, {
+    foreignKey: 'propertyTypeId', // Nome della colonna che verrà creata in Listings
+    as: 'listings'
+});
 
-export async function seedCategories(database) {
-    const Category = database.models.Category;
+// Relazione: Ogni Listing appartiene a un solo PropertyType
+Listing.belongsTo(PropertyType, {
+    foreignKey: 'propertyTypeId',
+    as: 'type' // 
+});
 
+async function seedCategories() {
+   
     // Qui inseriamo i nomi tecnici (che userai come identificativi e icone)
     const defaultCategories = [
         { name: 'school' },
@@ -74,11 +85,35 @@ export async function seedCategories(database) {
         }
         console.log('[Database] Categorie (icone) inizializzate.');
     } catch (error) {
-        console.error('[Database] Errore durante il seeding:', error);
+        console.error('[Database] Errore durante il seeding: (Categorie)', error);
     }
 }
 
-seedCategories(database);
+async function seedPropertyType() {
+
+    const defaultProperty = [
+        { name: 'apartment' },
+        { name: 'cottage' },
+        { name: 'villa' },
+    ];
+
+    try {
+        for (const prop of defaultProperty) {
+            await PropertyType.findOrCreate({
+                where: { name: prop.name },
+                defaults: prop
+            });
+        }
+        console.log('[Database] Proprietà inizializzate.');
+    } catch (error) {
+        console.error('[Database] Errore durante il seeding (Proprietà):', error);
+    }
+}
+
+
+
+seedCategories();
+seedPropertyType();
 
 // Sincronizzazione del database
 database.sync()  //togliere alter: true (comporta rischi e perdita di dati)

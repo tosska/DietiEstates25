@@ -1,6 +1,6 @@
 import { MeiliSearchEngine } from "../models/MeiliListingSearchEngine";
 import { FilterCondition } from "../types/Filter";
-import { Address, Listing, ListingFilter } from "../types/Listing";
+import { ListingToIndex, ListingFilter } from "../types/Listing";
 import { GeoFilter} from "../types/GeoFilter";
 import { SearchEngine } from "../types/SearchEngine";
 import { SearchOptions } from "../types/SearchOptions";
@@ -10,10 +10,10 @@ import { Utils } from "../models/Utils.js";
 
 export class SearchController {
 
-    static listingSearchEngine: SearchEngine<Listing>;
+    static listingSearchEngine: SearchEngine<ListingToIndex>;
 
 
-    static async searchListing(body: ListingFilter): Promise<Listing[]> {
+    static async searchListing(body: ListingFilter): Promise<ListingToIndex[]> {
 
         let geoFilter: GeoFilter | undefined;
         let latitude: number | undefined;
@@ -51,8 +51,8 @@ export class SearchController {
         return filter.radiusKm && filter.longitude && filter.latitude
     }
 
-    private static setRadiusFilterOnResult(result: Listing[], lat: number, lng: number, radiusKm: number): Listing[]{
-        return result.filter((listing: Listing) => {
+    private static setRadiusFilterOnResult(result: ListingToIndex[], lat: number, lng: number, radiusKm: number): ListingToIndex[]{
+        return result.filter((listing: ListingToIndex) => {
                 console.log("Listing: ", listing);
                 const d = Utils.haversine(lat, lng, listing.latitude, listing.longitude);
                 return d <= radiusKm;

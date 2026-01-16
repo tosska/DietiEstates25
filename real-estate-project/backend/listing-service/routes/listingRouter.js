@@ -8,6 +8,15 @@ export const listingRouter = new express.Router();
 
 //offerRouter.use(enforceAuthentication);
 
+listingRouter.get("/listing-public/listing/types", (req, res, next) => {
+    ListingController.getPropertyTypes().then(types => {
+      res.status(200).json(types);
+    }).catch(err => {
+      next(err);
+      console.log(err.message);
+    });
+});
+
 //goal: recupero listing
 listingRouter.get("/listing-public/listing/:listingId",(req, res, next) => {
     ListingController.getListingById(req).then(listingItem => {
@@ -36,7 +45,7 @@ listingRouter.post("/listing", userContextMiddleware, enforceAuthenticationByAge
     });
 });
 
-listingRouter.put("/listing/:listingId", userContextMiddleware, enforceAuthenticationByAgent, (req, res, next) => {
+listingRouter.put("/listing/:listingId", userContextMiddleware, enforceAuthenticationByAgent,  upload.array("photos"), (req, res, next) => {
     ListingController.updateListing(req).then(listingItem => {
       res.status(200).json(listingItem.id);
     }).catch(err => {
@@ -120,6 +129,8 @@ listingRouter.get("/customers/me/listings/closed/offered", userContextMiddleware
       console.log(err.message);
     });
 });
+
+
 
 
 

@@ -6,6 +6,14 @@ export class PhotoService {
 
     static directoryPhoto = "images/active";
 
+
+    static async removeCurrentPhotosFromListing(listingId, listingFolder) {
+        fs.rmdirSync(listingFolder, {recursive: true});
+
+        Photo.destroy({where: {listingId: listingId}})
+
+    }
+
     static async savePhotos(listingId, files, transaction=null) {
 
         const directory = path.join(this.directoryPhoto, listingId.toString());
@@ -14,6 +22,8 @@ export class PhotoService {
         if (!fs.existsSync(listingFolder)) {
             //recusive: true crea tutte le cartelle intermedie se non esistono
             fs.mkdirSync(listingFolder, { recursive: true }); 
+        } else {
+            await this.removeCurrentPhotosFromListing(listingId, listingFolder)
         }
 
         // Crea le foto in parallelo e raccogli i risultati

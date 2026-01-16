@@ -1,10 +1,49 @@
 
 
-export interface Address {
+export interface IncomingListing {
+id: number;
+  title: string;
+  price: number;
+  listingType: string;
+  status: string;
+  description: string;
+  area: number;
+  numberRooms: number;
+  propertyType: string;
+  constructionYear: number;
+  energyClass: string;
+  agencyId: number;
+  agentId: number;
+  addressId: number;
+  
+  // Date (possono arrivare come stringhe ISO o oggetti Date)
+  publicationDate?: string | Date;
+  endPublicationDate?: string | Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 
+  // Relazioni Annidate (da appiattire)
+  Address: {
+    id: number;
+    street: string;
+    city: string;
+    postalCode: string;
+    state: string;
+    unitDetail: string;
+    longitude: number;
+    latitude: number;
+  };
+
+  // Foto (array di oggetti)
+  mainPhoto: string;
+
+  // Categorie (spesso array di oggetti o stringhe)
+  Category?: Array<{id: number, name: string }>;
 }
 
-export interface Listing {
+
+
+export interface ListingToIndex {
   id: number;
   title: string;
   price: number;
@@ -20,8 +59,6 @@ export interface Listing {
   energyClass: string;
   agencyId: number;
   agentId: number;
-  createdAt: string;
-  updatedAt: string;
   addressId: number;
   street: string;
   city: string;
@@ -30,6 +67,8 @@ export interface Listing {
   unitDetail: string;
   longitude: number;
   latitude: number;
+  mainPhoto: string;
+  categories?: string[];
 }
 
 export interface ListingFilter {
@@ -51,8 +90,9 @@ export interface ListingFilter {
   longitude?: number;
   latitude?: number;
   radiusKm?: number; // Optional for geo search
+  categories: string[];
 }
   
   
 
-export type AsyncCallbackListing = (data: Listing) => Promise<void>
+export type AsyncCallbackListing = (data: ListingToIndex) => Promise<void>

@@ -1,14 +1,18 @@
+
+import { Utils } from "./models/Utils.js";
 import express from "express";
 import { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
 import { searchRouter } from "./routes/searchRouter.js";
 import { SearchEngine } from "./types/SearchEngine.js";
-import { Listing } from "./types/Listing.js";
+import { ListingToIndex, IncomingListing } from "./types/Listing.js";
 import { MeiliSearchEngine } from "./models/MeiliListingSearchEngine.js";
 import { SearchController } from "./controllers/SearchController.js";
 import { MessageQueueRabbit } from "./models/MessageQueueRabbit.js";
-import 'dotenv/config.js';  // Legge il file .env e lo rende disponibile in process.env
+import 'dotenv/config';
+
+
 
 
 const app = express(); // creates an express application
@@ -16,30 +20,6 @@ const PORT = 3005;
 
 
 bootstrap();
-
-
-/*
-//fare refactoring di questo codice
-await ListingConsumer.init();
-
-
-ListingConsumer.listenAll({
-    onCreate: async (listing) => {
-      console.log(' creazione listing:', listing);
-      ListingSearchIndex.addOrUpdateListings(listing);
-      // puoi aggiornare cache, indice di ricerca, ecc.
-    },
-    onUpdate: async (listing) => {
-      console.log(' Annuncio aggiornato:', listing);
-      ListingSearchIndex.addOrUpdateListings(listing);
-    },
-    onDelete: async ({ id }) => {
-      console.log(' Annuncio eliminato con id:', id);
-      ListingSearchIndex.deleteListing(id);
-    }
-});
-*/
-
 
 // Register the morgan logging middleware, use the 'dev' format
 app.use(morgan('dev'));
@@ -64,7 +44,7 @@ app.listen(PORT);
 //da sistemare
 async function bootstrap() {
 
-  let listingSearchEngine: SearchEngine<Listing>;
+  let listingSearchEngine: SearchEngine<ListingToIndex>;
   
   try{
     listingSearchEngine= await MeiliSearchEngine.create(
@@ -93,7 +73,8 @@ async function bootstrap() {
     'unitDetail',
     'longitude',
     'latitude',
-    'country'
+    'country',
+    'categories'
   ]);
 
 
@@ -101,17 +82,26 @@ async function bootstrap() {
     console.log("Errore connessione al motore di ricerca:", error);
   }
 
-
-
-
   try{
     // Istanzia la coda RabbitMQ per Listing
-    const messageQueue = new MessageQueueRabbit<Listing>('amqp://localhost');
+    const messageQueue = new MessageQueueRabbit<IncomingListing>('amqp://localhost');
     await messageQueue.connect();
 
-    messageQueue.consume('listing_created', async (listing: Listing) => {
+    messageQueue.consume('listing_created', async (listing: IncomingListing | string) => {
       console.log('Listing created:', listing);
-      await listingSearchEngine.addItemToIndex(listing);
+      const flatListing : ListingToIndex = Utils.convertListingObjectToFlatObject(listing as IncomingListing);
+      await listingSearchEngine.addItemToIndex(flatListing);
+    });
+
+    messageQueue.consume('listing_updated', async (listing: IncomingListing | string) => {
+      console.log('Listing created:', listing);
+      const flatListing : ListingToIndex = Utils.convertListingObjectToFlatObject(listing as IncomingListing);
+      await listingSearchEngine.addItemToIndex(flatListing);
+    });
+
+    messageQueue.consume('listing_deleted', async (id: IncomingListing | string) => {
+      console.log('Listing created:', id);
+      await listingSearchEngine.removeItemFromIndex(id as string);
     });
 
   } catch (error) {

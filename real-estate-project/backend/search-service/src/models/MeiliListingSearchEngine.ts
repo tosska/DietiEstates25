@@ -1,5 +1,4 @@
 import { Index, MeiliSearch, RecordAny, SearchParams} from 'meilisearch';
-import { Listing } from "../types/Listing";
 import { SearchEngine } from '../types/SearchEngine';
 import { SearchOptions } from '../types/SearchOptions';
 import { FilterCondition } from '../types/Filter';
@@ -77,8 +76,15 @@ export class MeiliSearchEngine<T extends RecordAny> implements SearchEngine<T> {
     const arrayFiltersString: string[] = [];
 
     filters.forEach(filter => {
-      if (typeof filter.value === 'string') {filter.value= `"${filter.value}"`;}
-      arrayFiltersString.push(`${filter.field} ${filter.operator} ${filter.value}`);
+
+        let finalValue = filter.value;
+        if (Array.isArray(filter.value)) {
+            finalValue = JSON.stringify(filter.value); 
+        } 
+        else if (typeof filter.value === 'string') {
+            finalValue = `"${filter.value}"`;
+        }
+      arrayFiltersString.push(`${filter.field} ${filter.operator} ${finalValue}`);
     });
     console.log("PROVA")
     console.log(arrayFiltersString);

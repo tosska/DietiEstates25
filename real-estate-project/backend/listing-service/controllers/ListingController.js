@@ -1,6 +1,6 @@
 import { AgencyClient } from "../clients/AgencyClient.js";
 import { OfferClient } from "../clients/OfferClient.js";
-import {Listing, Address, Photo, Category, database} from "../models/Database.js";
+import {Listing, Address, Photo, Category, database, PropertyType} from "../models/Database.js";
 import { ListingPublisher } from "../models/ListingPublisher.js";
 import { ListingService } from "../services/ListingService.js";
 import { PhotoService } from "../services/PhotoService.js";
@@ -11,32 +11,25 @@ export class ListingController {
         const listingId = req.params.listingId;
         let listing = await Listing.findByPk(listingId, {
             include: [Address, Photo, 
-             
             {
                 model: Category,
-                // Qui indichi quali campi vuoi della tabella Category
                 attributes: ['name'], 
-                // Questo serve a non mostrare i dati della tabella di giunzione
                 through: { attributes: [] } 
             }
         ],
         });
 
+        console.log("ANUNCCIOASDASD", listing)
+
         if(!listing){
-            return new Error('Listing not found');
+            const error = new Error('Listing not found');
+            error.status = 404;
+            throw error;
         }
 
         return listing;
 
-        /*
-        if(listing){
-            const photos = await PhotoService.getPhotosByListingIdAndSetUrl(listingId);
-            listing.dataValues.Photos = photos;
-            return listing;
-        }
 
-        
-        */
     }
 
 
@@ -79,14 +72,14 @@ export class ListingController {
 
         await transaction.commit();
 
-        ListingService.saveCategoriesOnListing(listingDB, 
+        const categories = await ListingService.saveCategoriesOnListing(listingDB, 
             addressDB.dataValues.latitude, 
             addressDB.dataValues.longitude
         );
 
-        //Rimuovo id da address in modo che non crei conflitto sul motore di ricerca (da spostare nel microservizio di ricerca)
-        const {id, ...addressWithoutId} = addressDB.dataValues;
-        const listingToPublish = {...listingDB.dataValues, ...addressWithoutId, mainPhoto: listingPhotos[0] || null};
+        //const {id, ...addressWithoutId} = addressDB.dataValues;
+        listingDB.dataValues.Address = addressDB;
+        const listingToPublish = {...listingDB.dataValues, mainPhoto: listingPhotos[0], categories: categories || null};
         ListingPublisher.publishCreated(listingToPublish);
 
         return listingDB;
@@ -94,29 +87,42 @@ export class ListingController {
     }
 
 
-
-    //valutare un rectoring
     static async updateListing(req){
         return new Promise(async (resolve, reject) => {
             try {
 
+                const dataParse = JSON.parse(req.body.listingData); 
+                const listingId = req.params.listingId;
+
                 const transaction = await database.transaction();
 
-                let listing = await Listing.findByPk(req.params.listingId);
+                let listing = await Listing.findByPk(listingId);
  
                 if (!listing) {
+                    await transaction.rollback();
                     return reject(new Error('Listing not found'));
                 }
                 
-                let updateFieldsListing = req.body?.listing;
-                let updateFieldsAddress = req.body?.address;
+                let updateFieldsListing = dataParse;
+                let updateFieldsAddress = dataParse.address;
+
+                let eventualNewCategories=[];
                 
                 //in listing la chiave esterna address non va cambiata
-                if(updateFieldsAddress)
+                if(updateFieldsAddress) {
                     await Address.update(updateFieldsAddress, {where: {id: listing.addressId}}, {transaction});
+                    eventualNewCategories = await ListingService.saveCategoriesOnListing(
+                        listing, 
+                        updateFieldsAddress.latitude, 
+                        updateFieldsAddress.longitude
+                    ); 
+                }
                 
-                if(updateFieldsListing)
+                if(updateFieldsListing) {}
                     await Listing.update(updateFieldsListing, {where: {id: listing.id}}, {transaction})
+
+                if(req.files)
+                    await PhotoService.savePhotos(listingId, req.files, transaction);
                 
                 await transaction.commit();
 
@@ -142,7 +148,7 @@ export class ListingController {
                 }
     
                 await Listing.destroy({where: {id: listing.id}});
-                await Address.destroy({where: {id: listing.addressId}}) //da valutare se cancellare anche address
+                await Address.destroy({where: {id: listing.addressId}}) 
 
                 ListingPublisher.publishDeleted(listing.id);
       
@@ -226,10 +232,16 @@ export class ListingController {
 
         return Listing.findAll({
             where: { status: 'Active' },
-            include: [Address],
+            include: [Address, Photo],
             order: [['publicationDate', 'DESC']],
             limit: limit
         });
+    }
+
+    static async getPropertyTypes(){
+
+        return PropertyType.findAll();
+
     }
 
     
