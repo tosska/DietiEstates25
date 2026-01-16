@@ -1,10 +1,9 @@
 import express from "express";
 import { AgencyController } from "../controllers/AgencyController.js";
-import { userContextMiddleware } from "../middleware/authorization.js"; // Aggiungi se serve proteggere getMyAgency
+import { userContextMiddleware } from "../middleware/authorization.js";
 
 export const agencyRouter = express.Router();
 
-// GET all
 agencyRouter.get('/agencies', async (req, res) => {
     try {
         const agencies = await AgencyController.getAllAgencies();
@@ -14,8 +13,8 @@ agencyRouter.get('/agencies', async (req, res) => {
     }
 });
 
-// POST Internal (Setup)
-agencyRouter.post('/agency', async (req, res) => { // o /internal/setup-agency
+// Setup interno (Auth -> Agency)
+agencyRouter.post('/agency', async (req, res) => {
     try {
         const result = await AgencyController.createFullAgency(req.body);
         res.status(201).json(result);
@@ -24,10 +23,10 @@ agencyRouter.post('/agency', async (req, res) => { // o /internal/setup-agency
     }
 });
 
-// GET Agency by Admin
+// GET Agency by Admin ID
 agencyRouter.get('/admin/:adminId', async (req, res) => {
     try {
-        const result = await AgencyController.getAgencyByAdmin(req);
+        const result = await AgencyController.getAgencyByAdmin(req.params.adminId);
         res.status(200).json(result);
     } catch (error) {
         const status = error.message.includes('non trovato') ? 404 : 400;
@@ -45,11 +44,10 @@ agencyRouter.get('/agency/:agencyId', async (req, res) => {
     }       
 });
 
-// GET Agency Name
 agencyRouter.get('/agency/:agencyId/name', async (req, res) => {
     try {
         const agency = await AgencyController.getAgencyNameById(req.params.agencyId);  
-        res.status(200).json(agency.name); // o agency.description se name non esiste
+        res.status(200).json(agency); // Ritorna tutto l'oggetto se name non esiste
     } catch (error) {
         res.status(404).json({ message: error.message });
     }       

@@ -7,18 +7,24 @@ export class AdminController {
             const { credentialsId, name, surname, phone, vatNumber, yearsExperience, urlPhoto } = req.body;
             if (!credentialsId) throw new Error('credentialsId mancante');
 
-            // Check permessi (Admin deve avere un'agenzia)
+            // Verifica che chi crea l'admin sia un manager/admin con agenzia
             const creatorAdmin = await Admin.findOne({ where: { id: req.userId } });
             if (!creatorAdmin) throw new Error('Admin creatore non trovato');
             
             const agencyId = creatorAdmin.agencyId;
             if (!agencyId) throw new Error('Admin non ha agenzia associata');
 
-            const agency = await Agency.findByPk(agencyId);
-            if (!agency) throw new Error('Agenzia non trovata');
-    
             const admin = await Admin.create({
-                credentialsId, agencyId, name, surname, phone, vatNumber, yearsExperience, urlPhoto
+                credentialsId,
+                agencyId,
+                name,
+                surname,
+                phone,
+                vatNumber,
+                yearsExperience,
+                urlPhoto,
+                manager: false,
+                role: 'admin'
             });
     
             return {
@@ -39,15 +45,20 @@ export class AdminController {
             credentialsId,
             agencyId: agencyId || null,
             manager: true,
-            role: 'admin',
+            role: 'manager',
         });
 
-        return { message: 'Manager creato con successo', adminId: admin.id };
+        return {
+            message: 'Manager creato con successo',
+            adminId: admin.id,
+        };
     }
 
     static async getAdminById(id) {
         const admin = await Admin.findByPk(id);
-        if (!admin) throw new Error('Admin non trovato');
+        if (!admin) {
+            throw new Error('Admin non trovato');
+        }
         return admin;
     }
 
