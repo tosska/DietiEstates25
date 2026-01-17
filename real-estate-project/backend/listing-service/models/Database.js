@@ -63,8 +63,8 @@ PropertyType.hasMany(Listing, {
 
 // Relazione: Ogni Listing appartiene a un solo PropertyType
 Listing.belongsTo(PropertyType, {
-    foreignKey: 'propertyTypeId',
-    as: 'type' // 
+    foreignKey: 'propertyTypeId', 
+    as: 'propertyType'
 });
 
 async function seedCategories() {

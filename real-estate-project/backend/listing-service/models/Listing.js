@@ -42,10 +42,6 @@ export function createListingModel(database) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        propertyType: {
-            type: DataTypes.STRING, //da capire meglio il tipo
-            allowNull: false
-        },
         constructionYear: {
             type: DataTypes.INTEGER, 
             allowNull: false

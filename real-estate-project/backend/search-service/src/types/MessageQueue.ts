@@ -4,7 +4,7 @@ export interface MessageQueue<T> {
 
   publish(queue: string, data: T): Promise<void>;
 
-  consume(queue: string, handler: (data: T | string) => Promise<void>): Promise<void>;
+  consume(queue: string, handler: (data: T | {id: string}) => Promise<void>): Promise<void>;
   get(queue: string): Promise<T | null>;
 
   //sincroni

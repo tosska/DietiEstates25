@@ -17,6 +17,7 @@ export class Utils {
 
         const mappings: [keyof ListingFilter, string, '=' | '>=' | '<=' | 'IN'][] = [
             ['listing_type', 'listingType', '='],
+            ['propertyType', 'propertyType', '='],
             ['number_rooms', 'numberRooms', '='],
             ['min_area', 'area', '>='],
             ['max_area', 'area', '<='],
@@ -104,13 +105,8 @@ export class Utils {
 
     public static convertListingObjectToFlatObject(raw: IncomingListing): ListingToIndex {
         const addr = raw.Address || {};
-
-        // 2. Gestione sicura Categorie
-        let cats: string[] = [];
-        if (Array.isArray(raw.Category)) {
-            // Se è un array di oggetti {name: '...'}, estrai name, altrimenti usa la stringa
-            cats = raw.Category.map((c: any) => (typeof c === 'object' && c.name ? c.name : c));
-        }
+        
+        console.log("CATEGORIE IN CONVERSIONE", raw.categories)
 
         // 4. Helper per le date (assicura che siano stringhe)
         const toDateString = (d?: string | Date) => d ? new Date(d).toISOString() : '';
@@ -141,13 +137,14 @@ export class Utils {
             city: addr.city || '',
             postalCode: addr.postalCode || '',
             state: addr.state || '',
+            country: addr.country || '',
             unitDetail: addr.unitDetail || '',
             longitude: addr.longitude || 0,
             latitude: addr.latitude || 0,
 
             // Media
             mainPhoto: raw.mainPhoto,
-            categories: cats
+            categories: raw.categories || []
         };
 
         return result;

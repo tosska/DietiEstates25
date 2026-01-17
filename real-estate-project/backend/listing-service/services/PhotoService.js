@@ -16,6 +16,8 @@ export class PhotoService {
 
     static async savePhotos(listingId, files, transaction=null) {
 
+        console.log("FILE:", files);
+
         const directory = path.join(this.directoryPhoto, listingId.toString());
     
         const listingFolder = path.join(process.cwd(), directory);
@@ -24,6 +26,7 @@ export class PhotoService {
             fs.mkdirSync(listingFolder, { recursive: true }); 
         } else {
             await this.removeCurrentPhotosFromListing(listingId, listingFolder)
+            fs.mkdirSync(listingFolder, { recursive: true }); 
         }
 
         // Crea le foto in parallelo e raccogli i risultati

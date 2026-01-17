@@ -15,11 +15,11 @@ export class ListingController {
                 model: Category,
                 attributes: ['name'], 
                 through: { attributes: [] } 
-            }
+            }, 'propertyType'
+            
         ],
+        order: [[Photo, 'order', 'ASC']]
         });
-
-        console.log("ANUNCCIOASDASD", listing)
 
         if(!listing){
             const error = new Error('Listing not found');
@@ -76,10 +76,10 @@ export class ListingController {
             addressDB.dataValues.latitude, 
             addressDB.dataValues.longitude
         );
-
+        const propertyType = await PropertyType.findByPk(listingDB.propertyTypeId);
         //const {id, ...addressWithoutId} = addressDB.dataValues;
         listingDB.dataValues.Address = addressDB;
-        const listingToPublish = {...listingDB.dataValues, mainPhoto: listingPhotos[0], categories: categories || null};
+        const listingToPublish = {...listingDB.dataValues, propertyType: propertyType.name, mainPhoto: listingPhotos[0], categories: categories || null};
         ListingPublisher.publishCreated(listingToPublish);
 
         return listingDB;
@@ -90,7 +90,7 @@ export class ListingController {
     static async updateListing(req){
         return new Promise(async (resolve, reject) => {
             try {
-
+                let listingPhotos = {};
                 const dataParse = JSON.parse(req.body.listingData); 
                 const listingId = req.params.listingId;
 
@@ -122,13 +122,18 @@ export class ListingController {
                     await Listing.update(updateFieldsListing, {where: {id: listing.id}}, {transaction})
 
                 if(req.files)
-                    await PhotoService.savePhotos(listingId, req.files, transaction);
+                    listingPhotos = await PhotoService.savePhotos(listingId, req.files, transaction);
                 
                 await transaction.commit();
 
-                const editListing = await Listing.findByPk(req.params.listingId, {include: [Address] });
-
-                ListingPublisher.publishUpdated(editListing);
+                let editListing = await Listing.findByPk(req.params.listingId, {include: [Address, Category, 'propertyType'] });
+                console.log("annuncio modificato", editListing.dataValues);
+                editListing.dataValues.propertyType = editListing.propertyType.name;
+                let editListingToPublish = {};
+                
+                editListingToPublish = {...editListing.dataValues, mainPhoto: listingPhotos[0] || ''};
+            
+                ListingPublisher.publishUpdated(editListingToPublish);
 
                 //aggiustare il ritorno
                 resolve(editListing);
@@ -185,7 +190,8 @@ export class ListingController {
     static async getListingsForAgent(req){
         return Listing.findAll({
             where: { agentId: req.userId},
-            include: [Address, Photo]
+            include: [Address, Photo],
+            order: [[Photo, 'order', 'ASC']]
         });
     }
 
@@ -193,7 +199,8 @@ export class ListingController {
 
         return Listing.findAll({
             where: { status: 'Active', agentId: req.userId},
-            include: [Address, Photo]
+            include: [Address, Photo],
+            order: [[Photo, 'order', 'ASC']]
         });
     }
 
@@ -201,7 +208,8 @@ export class ListingController {
 
         return Listing.findAll({
             where: { status: 'Closed', agentId: req.userId},
-            include: [Address, Photo]
+            include: [Address, Photo],
+            order: [[Photo, 'order', 'ASC']]
         });
     }
 
@@ -213,6 +221,7 @@ export class ListingController {
         return Listing.findAll({
             where: { id: listingIds, status: 'Active' },
             include: [Address, Photo],
+            order: [[Photo, 'order', 'ASC']]
         });
     }
 
@@ -224,6 +233,7 @@ export class ListingController {
         return Listing.findAll({
             where: { id: listingIds, status: 'Closed' },
             include: [Address, Photo],
+            order: [[Photo, 'order', 'ASC']]
         });
     }
 
@@ -233,7 +243,8 @@ export class ListingController {
         return Listing.findAll({
             where: { status: 'Active' },
             include: [Address, Photo],
-            order: [['publicationDate', 'DESC']],
+            order: [['publicationDate', 'DESC'],
+                    [Photo, 'order', 'ASC']],
             limit: limit
         });
     }

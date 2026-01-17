@@ -65,6 +65,7 @@ authenticationRouter.post('/register/agency', registerAgencyValidation, async (r
 
 authenticationRouter.post('/register/agent', enforceAuthentication, registerAgentValidation, async (req, res) => {
     try {
+        console.log("Sono arrivato");
         const result = await AuthController.registerAgent(req);
         res.status(201).json(result);
     } catch (error) {

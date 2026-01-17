@@ -35,7 +35,7 @@ export class MessageQueueRabbit<T> implements MessageQueue<T> {
     }
 
 
-    async consume(queue: string, handler: (message: T | string) => Promise<void>): Promise<void> {
+    async consume(queue: string, handler: (message: T | {id: string}) => Promise<void>): Promise<void> {
         this.ensureChannel();
 
         await this.channel?.assertQueue(queue, { durable: true });

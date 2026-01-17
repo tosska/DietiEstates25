@@ -26,10 +26,12 @@ id: number;
   Address: {
     id: number;
     street: string;
+    houseNumber: string,
     city: string;
-    postalCode: string;
     state: string;
+    country: string;
     unitDetail: string;
+    postalCode: string;
     longitude: number;
     latitude: number;
   };
@@ -38,7 +40,7 @@ id: number;
   mainPhoto: string;
 
   // Categorie (spesso array di oggetti o stringhe)
-  Category?: Array<{id: number, name: string }>;
+  categories?: string[];
 }
 
 
@@ -62,6 +64,7 @@ export interface ListingToIndex {
   addressId: number;
   street: string;
   city: string;
+  country: string;
   postalCode: string;
   state: string;
   unitDetail: string;
@@ -73,6 +76,7 @@ export interface ListingToIndex {
 
 export interface ListingFilter {
   listing_type?: string;
+  propertyType?: string;
   number_rooms?: number;
   min_area?: number;
   max_area?: number;

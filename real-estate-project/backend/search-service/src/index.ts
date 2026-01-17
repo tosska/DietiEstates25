@@ -74,9 +74,9 @@ async function bootstrap() {
     'longitude',
     'latitude',
     'country',
-    'categories'
+    'categories',
+    'propertyType'
   ]);
-
 
   } catch(error){
     console.log("Errore connessione al motore di ricerca:", error);
@@ -87,26 +87,28 @@ async function bootstrap() {
     const messageQueue = new MessageQueueRabbit<IncomingListing>('amqp://localhost');
     await messageQueue.connect();
 
-    messageQueue.consume('listing_created', async (listing: IncomingListing | string) => {
+    messageQueue.consume('listing_created', async (listing: IncomingListing | {id: string}) => {
       console.log('Listing created:', listing);
       const flatListing : ListingToIndex = Utils.convertListingObjectToFlatObject(listing as IncomingListing);
       await listingSearchEngine.addItemToIndex(flatListing);
     });
 
-    messageQueue.consume('listing_updated', async (listing: IncomingListing | string) => {
-      console.log('Listing created:', listing);
+    messageQueue.consume('listing_updated', async (listing: IncomingListing | {id: string}) => {
+      console.log('Listing updated:', listing);
       const flatListing : ListingToIndex = Utils.convertListingObjectToFlatObject(listing as IncomingListing);
       await listingSearchEngine.addItemToIndex(flatListing);
     });
 
-    messageQueue.consume('listing_deleted', async (id: IncomingListing | string) => {
-      console.log('Listing created:', id);
-      await listingSearchEngine.removeItemFromIndex(id as string);
+    messageQueue.consume('listing_deleted', async (idFromExtern: IncomingListing | {id: string}) => {
+      console.log('Listing deleted:', idFromExtern.id);
+      await listingSearchEngine.removeItemFromIndex(idFromExtern.id as string);
     });
 
   } catch (error) {
     console.error('Errore durante la connessione a RabbitMQ:', error);
   
   }
+
+
 
 }
