@@ -77,7 +77,7 @@ export class ListingController {
             addressDB.dataValues.longitude
         );
         const propertyType = await PropertyType.findByPk(listingDB.propertyTypeId);
-        //const {id, ...addressWithoutId} = addressDB.dataValues;
+    
         listingDB.dataValues.Address = addressDB;
         const listingToPublish = {...listingDB.dataValues, propertyType: propertyType.name, mainPhoto: listingPhotos[0], categories: categories || null};
         ListingPublisher.publishCreated(listingToPublish);
@@ -105,24 +105,24 @@ export class ListingController {
                 
                 let updateFieldsListing = dataParse;
                 let updateFieldsAddress = dataParse.address;
-
-                let eventualNewCategories=[];
                 
                 //in listing la chiave esterna address non va cambiata
                 if(updateFieldsAddress) {
                     await Address.update(updateFieldsAddress, {where: {id: listing.addressId}}, {transaction});
-                    eventualNewCategories = await ListingService.saveCategoriesOnListing(
+                    await ListingService.saveCategoriesOnListing(
                         listing, 
                         updateFieldsAddress.latitude, 
                         updateFieldsAddress.longitude
                     ); 
                 }
                 
-                if(updateFieldsListing) {}
+                if(updateFieldsListing) {
                     await Listing.update(updateFieldsListing, {where: {id: listing.id}}, {transaction})
+                }
 
-                if(req.files)
+                if(req.files) {
                     listingPhotos = await PhotoService.savePhotos(listingId, req.files, transaction);
+                }
                 
                 await transaction.commit();
 

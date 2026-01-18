@@ -1,5 +1,5 @@
 
-import { Category, database} from "../models/Database.js";
+import { Category } from "../models/Database.js";
 import { GeopifyClient } from "../clients/GeopifyClient.js";
 
 export class ListingService {

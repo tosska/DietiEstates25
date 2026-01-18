@@ -6,7 +6,6 @@ import { upload } from "../middleware/storageConfig.js";
 
 export const listingRouter = new express.Router();
 
-//offerRouter.use(enforceAuthentication);
 
 listingRouter.get("/listing-public/listing/types", (req, res, next) => {
     ListingController.getPropertyTypes().then(types => {
