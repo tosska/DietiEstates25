@@ -1,6 +1,4 @@
-import { Sequelize, DataTypes } from 'sequelize';
-import { createHash } from 'crypto';
-import { url } from 'inspector';
+import { DataTypes } from 'sequelize';
 
 export function createModel(database) {
     database.define('Agent', {

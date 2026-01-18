@@ -1,5 +1,5 @@
-import { Sequelize, DataTypes } from 'sequelize';
-import { createHash } from 'crypto';
+import { DataTypes } from 'sequelize';
+
 
 export function createModel(database) {
     database.define('Admin', {

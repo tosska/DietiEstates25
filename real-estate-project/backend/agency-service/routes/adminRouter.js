@@ -5,53 +5,51 @@ import { userContextMiddleware } from "../middleware/authorization.js";
 export const adminRouter = express.Router();
 
 // Create Admin
-adminRouter.post('/admins', userContextMiddleware, async (req, res) => {
+adminRouter.post('/admins', userContextMiddleware, async (req, res, next) => {
     try {
-        const result = await AdminController.createAdmin(req);
+        const result = await AdminController.createAdmin(req.body, req.userId);
         res.status(201).json(result);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        next(error);
     }
 });
 
-// Create Manager (Internal/Legacy)
-adminRouter.post('/manager', async (req, res) => {
+// Create Manager
+adminRouter.post('/manager', async (req, res, next) => {
     try {
-        const result = await AdminController.createManager(req);
+        const result = await AdminController.createManager(req.body);
         res.status(201).json(result);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        next(error);
     }
 });
 
-// GET Admin by ID (Fondamentale per il login Manager)
-adminRouter.get('/admin/:id', async (req, res) => {
+// GET Admin by ID
+adminRouter.get('/admin/:id', async (req, res, next) => {
     try {
         const result = await AdminController.getAdminById(req.params.id);
         res.status(200).json(result);
     } catch (error) {
-        const status = error.message === 'Admin non trovato' ? 404 : 500;
-        res.status(status).json({ message: error.message });
+        next(error);
     }
 });
 
 // Update Admin
-adminRouter.put('/admin/:id', userContextMiddleware, async (req, res) => {
+adminRouter.put('/admin/:id', userContextMiddleware, async (req, res, next) => {
     try {
-        const result = await AdminController.updateAdmin(req);
+        const result = await AdminController.updateAdmin(req.params.id, req.body);
         res.status(200).json(result);
     } catch (error) {
-        const status = error.message === 'Admin non trovato' ? 404 : 500;
-        res.status(status).json({ message: error.message });
+        next(error);
     }
 });
 
 // Internal: Get ID by Credentials
-adminRouter.get("/agency-internal/admin/:id/businessId", async (req, res) => {
+adminRouter.get("/agency-internal/admin/:id/businessId", async (req, res, next) => {
     try {
-        const admin = await AdminController.getAdminId(req);
+        const admin = await AdminController.getAdminId(req.params.id);
         res.status(200).json(admin);
     } catch (error) {
-        res.status(404).json({ message: error.message });
+        next(error);
     }
 });
