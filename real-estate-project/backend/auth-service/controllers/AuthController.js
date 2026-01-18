@@ -238,6 +238,13 @@ export class AuthController {
         };
     }
 
+    static async getCredentialsByIds(req) {
+        const { authIds } = req.body;
+        return await Credentials.findAll({
+            where: { id: authIds }
+        });
+    }
+
     static async updateCredentials(req) {
         const { email, password } = req.body;
         const credentials = await Credentials.findByPk(req.params.id);

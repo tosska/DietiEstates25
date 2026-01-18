@@ -94,6 +94,17 @@ authenticationRouter.get('/credentials/:id', enforceAuthentication, async (req, 
     }
 });
 
+authenticationRouter.post('/credentials/by-ids', async (req, res) => {
+    try {
+        const result = await AuthController.getCredentialsByIds(req);
+        res.status(200).json(result);
+    } catch (error) {
+        const status = error.message === 'Credenziali non trovate' ? 404 : 500;
+        res.status(status).json({ message: error.message });
+    }
+});
+
+
 authenticationRouter.put('/credentials/:id', enforceAuthentication, async (req, res) => {
     try {
         const result = await AuthController.updateCredentials(req);

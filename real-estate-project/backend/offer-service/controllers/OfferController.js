@@ -1,3 +1,4 @@
+import { AuthClient } from "../clients/AuthClient.js";
 import { CustomerClient } from "../clients/CustomerClient.js";
 import { ListingClient } from "../clients/ListingClient.js";
 import {Offer} from "../models/Database.js";
@@ -165,14 +166,46 @@ export class OfferController {
     }
 
     static async getAllPendingOffersByListingId(listingId) {
-        return Offer.findAll({
+        let offers = await Offer.findAll({
             where: {
                 listing_id: listingId,
                 status: "Pending",
                 counteroffer: false
             },
-            order: [['offerDate', 'ASC']]
+            order: [['offerDate', 'ASC']],
+            raw: true
         });
+
+        // Se non ci sono offerte, ritorna subito un array vuoto per evitare errori o chiamate inutili
+        if (!offers || offers.length === 0) {
+            return [];
+        }
+
+        const customerIds = offers.map(o => o.customer_id);
+
+        let customers = await CustomerClient.getCustomersByIds(customerIds);
+
+        const credentialsId = customers.map(c => c.credentialsId);
+
+        console.log("ciaooooooooo", credentialsId);
+
+        let usersData = await AuthClient.getUserData(credentialsId)
+
+        for (const offer of offers) {
+            // Trova il cliente corrispondente cercando per ID
+            const customer = customers.find(c => c.id === offer.customer_id);
+            const data = usersData.find(u => u.id === customer.credentialsId)
+
+            // Aggiungilo all'offerta (se trovato)
+            if (customer) {
+                customer.email = data.email;
+                offer.customer = customer;
+            } else {
+                offer.customer = null; // nel caso non venga trovato
+            }
+        }
+
+        return offers;
     }
 
     

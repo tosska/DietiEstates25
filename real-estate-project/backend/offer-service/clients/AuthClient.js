@@ -16,6 +16,21 @@ export class AuthClient {
             return null;
         }
 
+    }
+
+
+    static async getUserData(authIds) {
+        try {
+            const response = await axios.post(
+                `${this.api_gateway_url}/credentials/by-ids`,
+                { authIds }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Errore in getUserData:', error?.response?.data || error.message);
+            return null;
+        }
+
 
     }
 
