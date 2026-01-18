@@ -70,6 +70,7 @@ export class CustomerController {
         const customers = await Customer.findAll({
             attributes: ['id', 'credentialsId', 'name', 'surname', 'phone', 'registrationDate'],
         });
+        return customers;
     }
 
     static async getCustomerById(customerId) {

@@ -30,7 +30,7 @@ export class AuthClient {
                 { token },
                 { headers: { 'Content-Type': 'application/json' } }
             );
-            return response.data; // { userId, role, authId }
+            return response.data; 
         } catch (error) {
             throw new Error(error.response?.data?.message || 'Token non valido');
         }
