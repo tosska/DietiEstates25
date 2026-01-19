@@ -1,6 +1,5 @@
 
 import { AuthController } from "../controllers/AuthController.js";
-import { OfferController } from "../controllers/OfferController.js";
 import { AuthClient } from "../clients/AuthClient.js";
 
 

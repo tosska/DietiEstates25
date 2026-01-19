@@ -1,9 +1,8 @@
-import { MeiliSearchEngine } from "../models/MeiliListingSearchEngine";
+
 import { FilterCondition } from "../types/Filter";
 import { ListingToIndex, ListingFilter } from "../types/Listing";
 import { GeoFilter} from "../types/GeoFilter";
 import { SearchEngine } from "../types/SearchEngine";
-import { SearchOptions } from "../types/SearchOptions";
 import { Utils } from "../models/Utils.js";
 
 
@@ -32,7 +31,7 @@ export class SearchController {
         //Costruisco i filtri, convertendoli nel tipo FilterCondition definito dal dominio del microservizio
         //Se mando filtri geografici, otterrò gli annunci situati nel rettangolo prima definito
         let filters: FilterCondition[] = Utils.convertListingFilterToGenericFilter(body, geoFilter);
-        //const options: SearchOptions = body.options ?? {};
+
 
         //effettuo la ricerca applicando i filtri
         let result = await this.listingSearchEngine.search("", filters);

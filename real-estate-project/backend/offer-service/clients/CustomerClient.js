@@ -14,7 +14,6 @@ export class CustomerClient {
                 { headers: { apikey: process.env.INTERNAL_API_KEY } } 
             );
 
-            //console.log(response);
             return response.data;
         } catch (error) {
             console.error('Errore in getCustomersByIds:', error?.response?.data || error.message);

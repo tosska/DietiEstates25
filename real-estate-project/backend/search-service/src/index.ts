@@ -1,7 +1,6 @@
 
 import { Utils } from "./models/Utils.js";
-import express from "express";
-import { Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
 import { searchRouter } from "./routes/searchRouter.js";
@@ -49,7 +48,6 @@ async function bootstrap() {
   try{
     listingSearchEngine= await MeiliSearchEngine.create(
       process.env.SEARCH_ENGINE_URL as string, 
-      undefined,
       'listings', 
       'id'
     );

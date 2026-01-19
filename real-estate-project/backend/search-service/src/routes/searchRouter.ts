@@ -5,10 +5,9 @@ import { SearchController } from "../controllers/SearchController.js";
 
 export const searchRouter: Router = express.Router();
 
-//offerRouter.use(enforceAuthentication);
+
 
 //goal: recupero offerta
-
 searchRouter.post("/listings/search", (req: Request, res: Response, next: NextFunction) => {
 
     const body = req.body;

@@ -1,9 +1,7 @@
-import { parse } from "path";
+
 import { FilterCondition } from "../types/Filter";
 import { GeoFilter } from "../types/GeoFilter";
-import { IncomingListing } from "../types/Listing";
-import {ListingFilter} from "../types/Listing";
-import {ListingToIndex} from "../types/Listing";
+import { IncomingListing, ListingFilter, ListingToIndex } from "../types/Listing";
 
 
 export class Utils {

@@ -1,31 +1,34 @@
 import { AuthClient } from "../clients/AuthClient.js";
 import { CustomerClient } from "../clients/CustomerClient.js";
 import { ListingClient } from "../clients/ListingClient.js";
-import {Offer} from "../models/Database.js";
+import { Offer } from "../models/Database.js";
 import { OfferService } from "../services/OfferService.js";
+import { createError } from "../utils/errorUtils.js"; // Importazione della utility
 
 export class OfferController {
-
 
     static async getOfferById(offerId) {
         return Offer.findByPk(offerId);
     }
 
     static async createOffer(offerData, userId, role) {
-        let lastestOffer= OfferService.getLatestOfferForCustomerAndListing(offerData.customer_id, offerData.listing_id);
-
-        if(lastestOffer.status === "Pending"){
-            throw new Error("You already have a pending offer for this listing.");
+        console.log(role);
+        if (role === "customer") {
+            let lastestOffer = OfferService.getLatestOfferForCustomerAndListing(offerData.customer_id, offerData.listing_id);
+            console.log("test",lastestOffer);
+            if (lastestOffer && lastestOffer.status === "Pending") {
+                // Errore di logica: offerta già esistente (Bad Request)
+                throw createError("You already have a pending offer for this listing.", 400);
+            }
         }
 
         let offer = Offer.build(offerData);
         offer.status = offerData?.status || "Pending";
         offer.offerDate = new Date();
 
-
-        if(role === "customer"){
+        if (role === "customer") {
             offer.customer_id = userId;
-        } else if(role === "agent"){
+        } else if (role === "agent") {
             offer.agent_id = userId;
         }
 
@@ -39,23 +42,32 @@ export class OfferController {
 
     static async deleteOffer(offerId) {
         let offer = await Offer.findByPk(offerId);
-        if (!offer) throw new Error('Offer not found');
+        if (!offer) {
+            // Risorsa non trovata (Not Found)
+            throw createError('Offer not found', 404);
+        }
         await Offer.destroy({ where: { id: offer.id } });
         return offer;
     }
 
     static async respondToOffer(offerId, offerResponse, token) {
         let offer = await Offer.findByPk(offerId);
-        if (!offer) throw new Error('Offer not found');
-        if (offer.status !== "Pending") throw new Error('This offer has already been responded to');
-        if(offerResponse !== 'Accepted' && offerResponse !== 'Rejected') {
-            throw new Error('Invalid offer response. Must be "Accepted" or "Rejected"');
+        if (!offer) {
+            throw createError('Offer not found', 404);
+        }
+        
+        if (offer.status !== "Pending") {
+            throw createError('This offer has already been responded to', 400);
+        }
+        
+        if (offerResponse !== 'Accepted' && offerResponse !== 'Rejected') {
+            throw createError('Invalid offer response. Must be "Accepted" or "Rejected"', 400);
         }
         
         const [result] = await Offer.update({ status: offerResponse }, { where: { id: offer.id } });
 
         if (result === 0) {
-            throw new Error('Failed to update offer');
+            throw createError('Failed to update offer', 500);
         }
 
         if (offerResponse === 'Accepted') {
@@ -67,24 +79,21 @@ export class OfferController {
     }
 
     static async createCounteroffer(offerId, counterOfferData, role) {
-
         console.log("Creating counteroffer for offer ID:", offerId);
         
+        // La chiamata a respondToOffer gestirà internamente i createError se l'offerId non esiste o non è Pending
         await this.respondToOffer(offerId, 'Rejected');
         
-        if(role === "customer"){
+        if (role === "customer") {
             counterOfferData.counteroffer = false;
-        } else if(role === "agent"){
+        } else if (role === "agent") {
             counterOfferData.counteroffer = true;
         }
 
         await this.createOffer(counterOfferData);
     }
 
-
-
     static async getOfferHistoryForListingByAgent(listingId, userId) {
-     
         let offers = await Offer.findAll({
             where: { listing_id: listingId, agent_id: userId },
             order: [['offerDate', 'DESC']],
@@ -92,34 +101,22 @@ export class OfferController {
         });
 
         const customerIds = offers.map(o => o.customer_id);
-
         let customers = await CustomerClient.getCustomersByIds(customerIds);
 
         for (const offer of offers) {
-            // Trova il cliente corrispondente cercando per ID
             const customer = customers.find(c => c.id === offer.customer_id);
-
-            // Aggiungilo all'offerta (se trovato)
-            if (customer) {
-                offer.customer = customer;
-            } else {
-                offer.customer = null; // nel caso non venga trovato
-            }
+            offer.customer = customer || null;
         }
 
         console.log("Offer history with customer details:", offers);
-    
         return offers;
-
     }
 
     static async getOfferHistoryForListingByCustomer(listingId, customerId) {
-
         return Offer.findAll({
             where: { listing_id: listingId, customer_id: customerId },
             order: [['offerDate', 'ASC']]
         });
-
     }
 
     static async getActiveOffersByAgent(agentId) {
@@ -133,17 +130,12 @@ export class OfferController {
     }
 
     static async getListingIdFromOffers(userId, role) {
-
         let whereClause;
         
-        if(role === "agent"){
-            whereClause = {
-                agent_id: userId,
-            };
-        } else if(role === "customer"){
-            whereClause = {
-                customer_id: userId,
-            };
+        if (role === "agent") {
+            whereClause = { agent_id: userId };
+        } else if (role === "customer") {
+            whereClause = { customer_id: userId };
         }
 
         let listingIds = await Offer.findAll({
@@ -176,37 +168,27 @@ export class OfferController {
             raw: true
         });
 
-        // Se non ci sono offerte, ritorna subito un array vuoto per evitare errori o chiamate inutili
         if (!offers || offers.length === 0) {
             return [];
         }
 
         const customerIds = offers.map(o => o.customer_id);
-
         let customers = await CustomerClient.getCustomersByIds(customerIds);
-
         const credentialsId = customers.map(c => c.credentialsId);
 
-        console.log("ciaooooooooo", credentialsId);
-
-        let usersData = await AuthClient.getUserData(credentialsId)
+        let usersData = await AuthClient.getUserData(credentialsId);
 
         for (const offer of offers) {
-            // Trova il cliente corrispondente cercando per ID
             const customer = customers.find(c => c.id === offer.customer_id);
-            const data = usersData.find(u => u.id === customer.credentialsId)
-
-            // Aggiungilo all'offerta (se trovato)
             if (customer) {
-                customer.email = data.email;
+                const data = usersData.find(u => u.id === customer.credentialsId);
+                customer.email = data ? data.email : null;
                 offer.customer = customer;
             } else {
-                offer.customer = null; // nel caso non venga trovato
+                offer.customer = null;
             }
         }
 
         return offers;
     }
-
-    
 }

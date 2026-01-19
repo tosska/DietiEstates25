@@ -12,7 +12,7 @@ export class MeiliSearchEngine<T extends RecordAny> implements SearchEngine<T> {
     this.index=index;
   }
 
-  static async create<T extends RecordAny>(host: string, apiKey: string = '', indexName: string, pk?: string) 
+  static async create<T extends RecordAny>(host: string, indexName: string, pk?: string, apiKey: string = '') 
   : Promise<MeiliSearchEngine<T>> {
     
     const client = new MeiliSearch({ host, apiKey });
