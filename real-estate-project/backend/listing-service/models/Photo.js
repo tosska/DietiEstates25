@@ -16,7 +16,7 @@ export function createPhotoModel(database) {
             allowNull: false 
         }
     }, {
- 
+        timestamps: false
     })
 }
 

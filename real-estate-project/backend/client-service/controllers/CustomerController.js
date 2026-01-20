@@ -1,4 +1,5 @@
 import { Customer } from '../models/Database.js';
+import { createError } from '../utils/errorUtils.js';
 
 export class CustomerController {
     
@@ -43,28 +44,42 @@ export class CustomerController {
 
         if (!credentialsId || !name || !surname) {
             throw new Error('Tutti i campi obbligatori (credentialsId, name, surname) devono essere forniti');
-        }   
+        }
 
-        if(phone) {
+        if (phone) {
             const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format
-            if(!phoneRegex.test(phone)) {
+            if (!phoneRegex.test(phone)) {
                 throw new Error('Invalid phone number format');
             }
         }
 
-        const customer = await Customer.create({
-            credentialsId: credentialsId,
-            name: name,
-            surname: surname,
-            phone: phone || null,
-            registrationDate: new Date(),
-        });
+        try {
+            const customer = await Customer.create({
+                credentialsId: credentialsId,
+                name: name,
+                surname: surname,
+                phone: phone || null,
+                registrationDate: new Date(),
+            });
 
-        return {
-            message: 'Customer created successfully',
-            customerId: customer.id,
-        };
-    }
+            return {
+                message: 'Customer created successfully',
+                customerId: customer.id,
+            };
+
+        } catch (error) {
+            //Intercettiamo l'errore di duplicato
+            //(es. SequelizeUniqueConstraintError per Sequelize)
+            if (
+                error.name === 'SequelizeUniqueConstraintError' ||
+                (error.message && error.message.toLowerCase().includes('unique'))
+            ) {
+                throw createError('Il numero di telefono è già registrato nel sistema', 400);
+            }
+
+            throw error;
+        }
+}
 
     static async getAllCustomers(req, res) {
         const customers = await Customer.findAll({

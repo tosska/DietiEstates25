@@ -51,7 +51,7 @@ export function createOfferModel(database) {
         }
 
     }, {
-
+        timestamps: false
     })
 }
 

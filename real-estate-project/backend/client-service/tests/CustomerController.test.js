@@ -143,25 +143,24 @@ describe('CustomerController.createCustomerT [Strategy: R-WECT Specific Combinat
 
     // --- COMBINAZIONE 7: 1 + 4 + 6 + 10 (PHONE GIÀ ESISTENTE) ---
     // CE1 + CE4 + CE6 + CE10 (Phone Duplicate)
-    // Nota: La sintassi è corretta, quindi passa la regex, ma il DB lo rifiuta (Unique Constraint)
-    test('Comb. 7 [1+4+6+10]: Phone Già Esistente -> Errore Unique Constraint', async () => {
-        // Arrange
+    test('Comb. 7: Phone esistente -> Deve lanciare un errore con codice 400', async () => {
+        // 1. Arrange
         const credentialsId = 100;
         const name = 'Mario';
         const surname = 'Rossi';
-        const duplicatePhone = '+393331234567'; // CE10 (Sintassi OK, ma esiste già)
+        const duplicatePhone = '+393331234567';
 
-        // Simuliamo l'errore del DB (Unique Constraint)
-        const dbError = new Error('Unique constraint error: phone already exists');
+        // Simuliamo l'errore del DB
+        const dbError = new Error('Unique constraint error');
+        dbError.name = 'SequelizeUniqueConstraintError';
+
         Customer.create.mockRejectedValue(dbError);
 
-        // Act & Assert
+        // 2. Act & Assert
+        // Verifica che l'errore rigettato abbia la proprietà 'code' (o statusCode) con valore 400
         await expect(
             CustomerController.createCustomerT(credentialsId, name, surname, duplicatePhone)
-        ).rejects.toThrow('Unique constraint error: phone already exists');
-
-        // Verify: Il metodo create VIENE chiamato (la regex era ok), ma il DB lo blocca
-        expect(Customer.create).toHaveBeenCalled();
+        ).rejects.toHaveProperty('status', 400);
     });
 
 });

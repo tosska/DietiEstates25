@@ -3,9 +3,12 @@ import morgan from "morgan";
 import cors from "cors";
 
 import { customerRouter } from "./routes/customerRouter.js";
+import {initDatabase} from "./models/Database.js"
 
 const app = express(); // creates an express application
 const PORT = 3002;
+
+initDatabase();
 
 // Register the morgan logging middleware, use the 'dev' format
 app.use(morgan('dev'));
