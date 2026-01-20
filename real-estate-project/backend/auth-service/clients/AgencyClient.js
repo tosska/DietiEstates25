@@ -2,12 +2,13 @@ import axios from 'axios';
 
 export class AgencyClient {
 
-    // URL mantenuti come da tua configurazione originale
-    static api_gateway_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/agency-service';
-    static api_gateway_internal_url = process.env.API_GATEWAY_URL_INTERN || 'http://localhost:8000/agency-internal';
-    
-    // Aggiungo questo URL diretto perché il tuo AuthController usava la porta 3000 per manager/agency
-    static direct_url = 'http://localhost:3000'; 
+    static BASE_GATEWAY = process.env.API_GATEWAY_URL || 'http://localhost:8000';
+
+
+    static api_gateway_url = `${this.BASE_GATEWAY}/agency-service`;
+    static api_gateway_internal_url = `${this.BASE_GATEWAY}/agency-internal`;
+
+    static direct_url = process.env.AGENCY_SERVICE_URL || 'http://localhost:3000';
 
     // --- METODI DI CONSULTAZIONE (ESISTENTI) ---
 

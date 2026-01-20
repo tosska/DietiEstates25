@@ -5,8 +5,10 @@ import cors from "cors";
 import { customerRouter } from "./routes/customerRouter.js";
 import {initDatabase} from "./models/Database.js"
 
+import 'dotenv/config.js'; 
+
 const app = express(); // creates an express application
-const PORT = 3002;
+const PORT = process.env.PORT  || 3002;
 
 initDatabase();
 

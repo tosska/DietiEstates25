@@ -5,10 +5,11 @@ import { adminRouter } from "./routes/adminRouter.js";
 import { agencyRouter } from "./routes/agencyRouter.js";
 import { agentRouter } from "./routes/agentRouter.js";
 import path from "path";
+import 'dotenv/config.js'; 
 
 
 const app = express(); // creates an express application
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Register the morgan logging middleware, use the 'dev' format
 app.use(morgan('dev'));

@@ -1,0 +1,29 @@
+services:
+  authentication-service:
+    build: .
+    container_name: authentication_service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    networks:
+      - kong-net
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      
+      # 1. URL BASE DEL GATEWAY (Kong)
+      # Il codice attaccherà da solo "/customer-service", "/agency-internal", ecc.
+      - API_GATEWAY_URL=http://kong-gateway:8000
+      
+      # 2. URL DIRETTI AI MICROSERVIZI (Bypassano Kong per le creazioni)
+      - CUSTOMER_SERVICE_URL=http://customer_service:3002
+      - AGENCY_SERVICE_URL=http://agency_service:3000
+
+      - TOKEN_SECRET=your-secret-key
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+
+networks:
+  kong-net:
+    external: true
+    name: api-gateway_kong-net

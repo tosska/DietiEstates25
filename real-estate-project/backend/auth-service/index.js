@@ -4,10 +4,12 @@ import cors from "cors";
 import { authenticationRouter } from "./routes/authenticationRouter.js";
 import { initDatabase } from "./models/Database.js";
 
+import 'dotenv/config.js'; 
+
 initDatabase();
 
 const app = express(); // creates an express application
-const PORT = 3001;
+const PORT = process.env.PORT  || 3001;
 
 // Register the morgan logging middleware, use the 'dev' format
 app.use(morgan('dev'));

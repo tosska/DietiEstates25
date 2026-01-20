@@ -1,0 +1,34 @@
+services:
+  agency-service:
+    build: .
+    container_name: agency_service
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - kong-net
+    volumes:
+      # PERSISTENZA IMMAGINI:
+      # Collega la cartella 'images' del tuo PC a quella del Container
+      - ./images:/app/images
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      
+      # Database (sostituisce localhost con il nome del container DB)
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - DIALECT=postgres
+      
+      # Configurazione Gateway e URL Interni (per i Client JS)
+      - API_GATEWAY_URL=http://kong-gateway:8000
+      # Questo serve se AgencyClient fa chiamate dirette a se stesso o se Auth lo chiama
+      - AGENCY_SERVICE_URL=http://agency_service:3000
+      
+      # Chiavi di sicurezza
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+      - TOKEN_SECRET=your-secret-key
+
+networks:
+  kong-net:
+    external: true
+    name: api-gateway_kong-net

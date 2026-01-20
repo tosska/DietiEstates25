@@ -2,11 +2,14 @@ import axios from 'axios';
 
 export class CustomerClient {
 
-    static api_gateway_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/customer-service';
-    static api_gateway_internal_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/customer-internal';
+    static BASE_GATEWAY = process.env.API_GATEWAY_URL || 'http://localhost:8000';
+
+    // 2. RICOSTRUZIONE AUTOMATICA: Aggiungiamo i suffissi
+    static api_gateway_url = `${this.BASE_GATEWAY}/customer-service`;
+    static api_gateway_internal_url = `${this.BASE_GATEWAY}/customer-internal`;
     
-    // URL diretto usato dal tuo controller originale
-    static direct_url = 'http://localhost:3002'; 
+    static direct_url = process.env.CUSTOMER_SERVICE_URL || 'http://localhost:3002'; 
+    // --------------------
 
     static async getCustomerId(credential_id) {
         console.log(process.env.INTERNAL_API_KEY);
@@ -34,6 +37,7 @@ export class CustomerClient {
             });
             return response.data;
         } catch (error) {
+            console.log(error);
             throw new Error(error.response?.data?.message || 'Errore creazione Customer');
         }
     }
