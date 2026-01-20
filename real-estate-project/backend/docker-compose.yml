@@ -201,9 +201,20 @@ services:
       - "3005:3005"
     environment:
       - PORT=3005
-      - MEILI_HOST=http://meilisearch:7700
-      - MEILI_MASTER_KEY=masterKey
+      - NODE_ENV=production
+      
+      # Connessione al Database (Nota il nome host 'dieti_postgres_db')
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - DIALECT=postgres
+      
+      # Connessione a RabbitMQ (Nota il nome host 'dieti_rabbitmq')
       - RABBITMQ_URL=amqp://dieti_rabbitmq
+      
+      # Connessione a MeiliSearch (Nota il nome host 'dieti_meilisearch')
+      - SEARCH_ENGINE_URL=http://dieti_meilisearch:7700
+      - MEILI_MASTER_KEY=masterKey123
+      
+      - TOKEN_SECRET=your-secret-key
     networks:
       - kong-net
     depends_on:
