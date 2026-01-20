@@ -1,0 +1,219 @@
+services:
+  # ==========================================
+  # 1. INFRASTRUTTURA BASE
+  # ==========================================
+  
+  # Database PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: dieti_postgres_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=caruso
+      - POSTGRES_DB=DietiUnina
+    ports:
+      - "5432:5432"
+    networks:
+      - kong-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Message Broker RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: dieti_rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"   # Porta AMQP per i servizi
+      - "15672:15672" # Dashboard Web (user: guest, pass: guest)
+    networks:
+      - kong-net
+
+  # Motore di Ricerca Meilisearch
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: meilisearch
+    restart: unless-stopped
+    environment:
+      - MEILI_MASTER_KEY=masterKey
+    ports:
+      - "7700:7700"
+    networks:
+      - kong-net
+
+  # API Gateway Kong (Modalità DB-less con file yaml)
+  kong:
+    # Invece di 'image', usiamo 'build' puntando alla tua cartella
+    build: ./api-gateway
+    container_name: kong-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"   # Proxy HTTP
+      - "8443:8443"   # Proxy HTTPS
+      - "8001:8001"   # Admin API HTTP
+      - "8444:8444"   # Admin API HTTPS
+    environment:
+      # Configurazione ripresa dal tuo file api-gateway/docker-compose.yml
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yaml
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl
+      # La tua chiave interna
+      - INTERNAL_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+      # Assicuriamoci che i plugin siano attivi (anche se definito nel Dockerfile, è bene ribadirlo)
+      - KONG_PLUGINS=bundled,custom-jwt-headers
+    networks:
+      - kong-net
+
+  # ==========================================
+  # 2. MICROSERVIZI APPLICATIVI
+  # ==========================================
+
+  # Servizio Autenticazione
+  authentication-service:
+    build: ./auth-service
+    container_name: authentication_service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - API_GATEWAY_URL=http://kong-gateway:8000
+      # Indirizzi diretti per le chiamate interne (fix per Axios)
+      - CUSTOMER_SERVICE_URL=http://customer_service:3002
+      - AGENCY_SERVICE_URL=http://agency_service:3000
+      - TOKEN_SECRET=your-secret-key
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+    networks:
+      - kong-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Servizio Agenzie
+  agency-service:
+    build: ./agency-service
+    container_name: agency_service
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persistenza immagini (adatta il percorso se necessario)
+      - ./agency-service/images:/app/images
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - API_GATEWAY_URL=http://kong-gateway:8000
+      - AGENCY_SERVICE_URL=http://agency_service:3000
+      - TOKEN_SECRET=your-secret-key
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+    networks:
+      - kong-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Servizio Clienti
+  customer-service:
+    build: ./client-service
+    container_name: customer_service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - NODE_ENV=production
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - API_GATEWAY_URL=http://kong-gateway:8000
+      - TOKEN_SECRET=your-secret-key
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+    networks:
+      - kong-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Servizio Annunci (Listing)
+  listing-service:
+    build: ./listing-service
+    container_name: listing_service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    volumes:
+      # Persistenza immagini
+      - ./listing-service/images:/app/images
+    environment:
+      - PORT=3003
+      - NODE_ENV=production
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - RABBITMQ_URL=amqp://dieti_rabbitmq
+      - API_GATEWAY_URL=http://kong-gateway:8000
+      - TOKEN_SECRET=your-secret-key
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+      # Geoapify Keys
+      - GEOPIFY_API_URL=https://api.geoapify.com/v2/places
+      - GEOPIFY_API_KEY=8b73f3e3576c4ff489b1f97f34475ed9
+    networks:
+      - kong-net
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  # Servizio Offerte
+  offer-service:
+    build: ./offer-service
+    container_name: offer_service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - NODE_ENV=production
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - API_GATEWAY_URL=http://kong-gateway:8000
+      - TOKEN_SECRET=your-secret-key
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+    networks:
+      - kong-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Servizio Ricerca (Search)
+  search-service:
+    build: ./search-service
+    container_name: search_service
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - MEILI_HOST=http://meilisearch:7700
+      - MEILI_MASTER_KEY=masterKey
+      - RABBITMQ_URL=amqp://dieti_rabbitmq
+    networks:
+      - kong-net
+    depends_on:
+      meilisearch:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+
+# Definizione della rete condivisa
+networks:
+  kong-net:
+    name: api-gateway_kong-net
+    driver: bridge

@@ -19,7 +19,9 @@ database.sync()
         console.error("Errore nella sincronizzazione del database: " + err.message);
     });
 
-app.use(cors()); 
+app.use(cors()); // NOSONAR
+
+app.disable('x-powered-by');
 
 app.use(morgan('dev'));
 

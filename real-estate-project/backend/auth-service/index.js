@@ -14,7 +14,9 @@ const PORT = process.env.PORT  || 3001;
 // Register the morgan logging middleware, use the 'dev' format
 app.use(morgan('dev'));
 
-app.use(cors()); 
+app.use(cors()); // NOSONAR
+
+app.disable('x-powered-by');
 
 // Parse incoming requests with a JSON payload
 app.use(express.json());

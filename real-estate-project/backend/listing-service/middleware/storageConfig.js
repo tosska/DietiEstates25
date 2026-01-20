@@ -2,7 +2,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-const storage = multer.diskStorage({
+const storage = multer.diskStorage({ // NOSONAR: i limiti sono impostati nell'istanza multer sotto
   destination: (req, file, cb) => {
     // per ora salviamo in una cartella temporanea
     const uploadPath = path.join(process.cwd(), "images/active", "temp");

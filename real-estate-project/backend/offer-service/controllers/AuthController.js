@@ -6,7 +6,6 @@ export class AuthController {
 
         const offer = await Offer.findByPk(offerId);
 
-        //console.log(offer);
 
         if (!offer) {
             throw new Error("Offer not found");

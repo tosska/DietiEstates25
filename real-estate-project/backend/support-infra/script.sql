@@ -1,12 +1,8 @@
--- ========================================================
--- SCRIPT CREAZIONE SCHEMA (PostgreSQL)
--- Basato sui modelli Sequelize e ER Diagram 
--- ========================================================
+
 
 BEGIN;
 
 -- 1. Creazione dei Tipi Enumerativi (ENUMs)
--- Sequelize mappa gli ENUM come tipi custom in Postgres
 CREATE TYPE "enum_listing_type" AS ENUM ('Sale', 'Rent');
 CREATE TYPE "enum_listing_status" AS ENUM ('Active', 'Closed');
 CREATE TYPE "enum_energy_class" AS ENUM ('A4','A3','A2','A1', 'A', 'B', 'C', 'D', 'E', 'F', 'G');
@@ -40,8 +36,6 @@ CREATE TABLE "Categories" (
 );
 
 -- Tabella: Addresses
--- Nota: Il diagramma mostra un'unica tabella Address. 
--- Ho unificato i campi dei modelli 'listing/Address.js' e 'agency/Address.js'.
 CREATE TABLE "Addresses" (
     "id" SERIAL PRIMARY KEY,
     "street" VARCHAR(255) NOT NULL,
@@ -72,7 +66,6 @@ CREATE TABLE "Customers" (
 );
 
 -- Tabella: Agencies
--- Nota: managerAdminId è nullable inizialmente per risolvere la dipendenza circolare
 CREATE TABLE "Agencies" (
     "agencyId" SERIAL PRIMARY KEY,
     "phone" VARCHAR(105) NOT NULL,

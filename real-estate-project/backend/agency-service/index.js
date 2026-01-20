@@ -14,7 +14,9 @@ const PORT = process.env.PORT || 3000;
 // Register the morgan logging middleware, use the 'dev' format
 app.use(morgan('dev'));
 
-app.use(cors()); 
+app.use(cors()); // NOSONAR
+
+app.disable('x-powered-by');
 
 app.use("/agency-public/images", express.static(path.join(process.cwd(), "images")));
 

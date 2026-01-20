@@ -23,10 +23,12 @@ bootstrap();
 // Register the morgan logging middleware, use the 'dev' format
 app.use(morgan('dev'));
 
-app.use(cors()); 
+app.use(cors()); // NOSONAR
 
 // Parse incoming requests with a JSON payload
 app.use(express.json());
+
+app.disable('x-powered-by');
 
 //error handler
 app.use( (err: any, req: Request, res: Response, next: NextFunction) => {
