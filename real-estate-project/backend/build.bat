@@ -46,7 +46,7 @@ echo   FASE 2: Avvio Microservizi Applicativi
 echo ============================================================
 echo.
 
-docker compose up -d --build authentication-service listing-service customer-service offer-service search-service
+docker compose up -d --build authentication-service listing-service customer-service offer-service search-service agency-service 
 
 echo.
 echo [OK] Sistema avviato e popolato!
