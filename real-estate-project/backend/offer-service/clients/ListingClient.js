@@ -2,8 +2,10 @@ import axios from 'axios';
 
 export class ListingClient {
 
-    static api_gateway_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/listing-service';
-    static api_gateway_internal_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/listing-internal';
+    static BASE_URL = process.env.API_GATEWAY_URL || 'http://localhost:8000'
+
+    static api_gateway_url = `${this.BASE_URL}/listing-service`;
+    static api_gateway_internal_url = `${this.BASE_URL}/listing-internal`;
 
     static async closeListing(listingId, token) {
 

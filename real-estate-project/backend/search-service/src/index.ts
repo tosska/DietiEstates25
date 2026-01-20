@@ -49,7 +49,8 @@ async function bootstrap() {
     listingSearchEngine= await MeiliSearchEngine.create(
       process.env.SEARCH_ENGINE_URL as string, 
       'listings', 
-      'id'
+      'id',
+      process.env.MEILI_MASTER_KEY || undefined
     );
 
 
@@ -82,7 +83,8 @@ async function bootstrap() {
 
   try{
     // Istanzia la coda RabbitMQ per Listing
-    const messageQueue = new MessageQueueRabbit<IncomingListing>('amqp://localhost');
+    const amqpUrl = process.env.RABBITMQ_URL || 'amqp://localhost';
+    const messageQueue = new MessageQueueRabbit<IncomingListing>(amqpUrl);
     await messageQueue.connect();
 
     messageQueue.consume('listing_created', async (listing: IncomingListing | {id: string}) => {

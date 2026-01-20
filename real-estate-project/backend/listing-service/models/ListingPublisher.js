@@ -1,7 +1,8 @@
 import amqp from 'amqplib';
+import 'dotenv/config.js'; 
 
 export class ListingPublisher {
-  static rabbitUrl = 'amqp://localhost';
+  static rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost'; 
   static conn = null;
   static channel = null;
 

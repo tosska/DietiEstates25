@@ -2,8 +2,10 @@ import axios from 'axios';
 
 export class AgencyClient {
 
-    static api_gateway_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/agency-service';
-    static api_gateway_internal_url = process.env.API_GATEWAY_INTERNAL_URL || 'http://localhost:8000/agency-internal';
+    static BASE_URL = process.env.API_GATEWAY_URL || 'http://localhost:8000';
+
+    static api_gateway_url = `${this.BASE_URL}/agency-service`;
+    static api_gateway_internal_url = `${this.BASE_URL}/agency-internal`;
     
     static async getAgencyIdByAgentId(agentId){
 

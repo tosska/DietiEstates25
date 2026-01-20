@@ -4,9 +4,10 @@ import cors from "cors";
 import morgan from "morgan";
 import { offerRouter } from "./routes/offerRouter.js";
 import { database } from "./models/Database.js";
+import 'dotenv/config.js'; 
 
 const app = express(); // creates an express application
-const PORT = 3004;
+const PORT = process.env.PORT || 3004;
 
 
 // Sincronizzazione del database

@@ -1,0 +1,37 @@
+services:
+  listing-service:
+    build: .
+    container_name: listing_service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    networks:
+      - kong-net
+    volumes:
+      # MAPPA LA CARTELLA IMMAGINI PER PERSISTENZA
+      # Sintassi: ./percorso_pc : /percorso_container
+      - ./images:/app/images
+    environment:
+      - PORT=3003
+      - NODE_ENV=production
+      
+      # Database
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - DIALECT=postgres
+      
+      # RabbitMQ
+      - RABBITMQ_URL=amqp://dieti_rabbitmq
+      
+      # Geoapify (.env)
+      - GEOPIFY_API_URL=https://api.geoapify.com/v2/places
+      - GEOPIFY_API_KEY=8b73f3e3576c4ff489b1f97f34475ed9
+      
+      - TOKEN_SECRET=your-secret-key
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+
+      - API_GATEWAY_URL=http://kong-gateway:8000
+
+networks:
+  kong-net:
+    external: true
+    name: api-gateway_kong-net

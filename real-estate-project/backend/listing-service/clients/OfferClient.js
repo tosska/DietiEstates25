@@ -2,8 +2,10 @@ import axios from 'axios';
 
 export class OfferClient {
 
-    static api_gateway_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/offer-service';
-    static api_gateway_internal_url = process.env.API_GATEWAY_INTERNAL_URL || 'http://localhost:8000/offer-internal';
+    static BASE_URL = process.env.API_GATEWAY_URL || 'http://localhost:8000';
+
+    static api_gateway_url = `${this.BASE_URL}/offer-service`;
+    static api_gateway_internal_url = `${this.BASE_URL}/offer-internal`;
     
     static async getListingIdFromOffers(token){
 

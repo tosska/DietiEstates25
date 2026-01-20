@@ -2,8 +2,9 @@ import axios from 'axios';
 
 export class AuthClient {
 
-    // URL del gateway o servizio auth diretto
-    static api_gateway_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/auth-service';
+    static BASE_URL = process.env.API_GATEWAY_URL || 'http://localhost:8000';
+
+    static api_gateway_url = `${this.BASE_URL}/auth-service`;
 
     /**
      * Verifica se un utente esiste (usato dal middleware per header context)

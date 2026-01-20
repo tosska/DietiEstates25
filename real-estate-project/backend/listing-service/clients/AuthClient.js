@@ -2,7 +2,9 @@ import axios from 'axios';
 
 export class AuthClient {
 
-    static api_gateway_url = process.env.API_GATEWAY_URL || 'http://localhost:8000/auth-service';
+    static BASE_URL = process.env.API_GATEWAY_URL || 'http://localhost:8000';
+
+    static api_gateway_url = `${this.BASE_URL}/auth-service`;
     
     static async checkUser(authId){
 

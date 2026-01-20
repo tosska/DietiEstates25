@@ -1,0 +1,28 @@
+services:
+  customer-service:
+    build: .
+    container_name: customer_service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    networks:
+      - kong-net
+    environment:
+      # Porta interna
+      - PORT=3002
+      - NODE_ENV=production
+      
+      # Connessione al Database (Nota: host cambiato in dieti_postgres_db)
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - DIALECT=postgres
+      
+      # Altre chiavi dal tuo .env
+      - TOKEN_SECRET=your-secret-key
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+
+      - API_GATEWAY_URL=http://kong-gateway:8000
+
+networks:
+  kong-net:
+    external: true
+    name: api-gateway_kong-net

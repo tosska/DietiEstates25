@@ -1,0 +1,60 @@
+services:
+  postgres-db:
+    image: postgres:15-alpine  
+    container_name: dieti_postgres_db  #hostname
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: caruso
+      POSTGRES_DB: DietiUnina
+    ports:
+      - "5432:5432" # Esposto per poterlo controllare con DBeaver/PgAdmin dal tuo PC
+    volumes:
+      - pg_data:/var/lib/postgresql/data # Volume per non perdere i dati se spegni il container
+    networks:
+      - kong-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: dieti_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com  # User per accedere a pgAdmin
+      PGADMIN_DEFAULT_PASSWORD: admin         # Password per accedere a pgAdmin
+    ports:
+      - "5050:80"  # Accederai via browser sulla porta 5050
+    networks:
+      - kong-net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: dieti_rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # Porta messaggi
+      - "15672:15672" # Dashboard web (user: guest, pass: guest)
+    networks:
+      - kong-net
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.3
+    container_name: dieti_meilisearch
+    restart: always
+    environment:
+      - MEILI_MASTER_KEY=masterKey123  # Password per MeiliSearch
+      - MEILI_NO_ANALYTICS=true
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - kong-net
+
+volumes:
+  pg_data: # Definizione del volume persistente
+  meili_data:
+
+networks:
+  kong-net:
+    external: true
+    name: api-gateway_kong-net # Ci agganciamo alla stessa rete di Kong e dei servizi

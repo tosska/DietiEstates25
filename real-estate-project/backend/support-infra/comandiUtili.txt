@@ -1,0 +1,2 @@
+bash (in wsl)
+cat script.sql | docker exec -i dieti_postgres_db psql -U postgres -d DietiUnina

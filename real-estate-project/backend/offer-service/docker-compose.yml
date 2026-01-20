@@ -1,0 +1,27 @@
+services:
+  offer-service:
+    build: . # Percorso della cartella dove sta il Dockerfile
+    container_name: offer_service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    networks:
+      - kong-net   # La rete dove gira Kong
+      - backend-net # (Opzionale) Rete privata per comunicare col DB se non è su kong-net
+    environment:
+      # Sovrascriviamo le variabili del .env per adattarle a Docker
+      - PORT=3004
+      - NODE_ENV=production
+      # Sostituisci 'nome-container-db' con il nome reale del container Postgres
+      - DB_CONNECTION_URI=postgres://postgres:caruso@dieti_postgres_db:5432/DietiUnina
+      - DIALECT=postgres
+      - TOKEN_SECRET=your-secret-key
+      - INTERNAL_API_KEY=dfb6659c68c52305c5adbdc59c77b7f3d6235705327cb9bf4c37c96baf1fe1bd
+      - API_GATEWAY_URL=http://kong-gateway:8000
+
+networks:
+  kong-net:
+    external: true # Si aggancia alla rete di Kong già esistente
+    name: api-gateway_kong-net
+  backend-net:     # Rete interna per i servizi (se serve)
+    driver: bridge

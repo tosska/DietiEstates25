@@ -13,7 +13,7 @@ createCustomerModel(database);
 // Esporta i modelli
 export const { Customer } = database.models;
 
-async function initDatabase() {
+export async function initDatabase() {
     try {
         await database.sync();
         console.log("Database sincronizzato correttamente");
