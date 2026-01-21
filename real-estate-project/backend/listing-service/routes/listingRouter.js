@@ -121,7 +121,7 @@ listingRouter.get("/customers/me/listings/active/offered", userContextMiddleware
 });
 
 listingRouter.get("/customers/me/listings/closed/offered", userContextMiddleware, (req, res, next) => {
-    ListingController.getActiveListingsOfferedByCustomer(req).then(listings => {
+    ListingController.getClosedListingsOfferedByCustomer(req).then(listings => {
       res.status(200).json(listings);
     }).catch(err => {
       next(err);

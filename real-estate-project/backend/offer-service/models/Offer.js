@@ -48,8 +48,12 @@ export function createOfferModel(database) {
         listing_id: {
             type: DataTypes.INTEGER,
             allowNull: false
+        },
+        isRead: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            default: "false"
         }
-
     }, {
         timestamps: false
     })

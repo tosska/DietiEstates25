@@ -70,7 +70,7 @@ offerRouter.post("/offer/:offerId/counteroffer",
     restrictOfferAccess, 
     counterOfferValidation, // Validazione ID + Body Value
     (req, res, next) => {
-        OfferController.createCounteroffer(req.params.offerId, req.body, req.role)
+        OfferController.createCounteroffer(req.params.offerId, req.body, req.role, req.userId)
             .then(() => res.status(201).json({ message: 'Counteroffer created successfully' }))
             .catch(next);
 });
@@ -115,5 +115,23 @@ offerRouter.get("/customer/offers/history/listing/:listingId",
 offerRouter.get("/offers/all/listing-ids", userContextMiddleware, (req, res, next) => {
     OfferController.getListingIdFromOffers(req.userId)
         .then(listingIds => res.json(listingIds))
+        .catch(next);
+});
+
+offerRouter.post("/offers/read-status", userContextMiddleware, (req, res, next) => {
+    const { listingIds } = req.body;
+    console.log(req.body)
+    
+    OfferController.getLatestOfferReadStatus(listingIds)
+        .then(results => res.json(results))
+        .catch(next);
+});
+
+// Route per segnare un'offerta come letta
+offerRouter.put("/offers/:offerId/read", userContextMiddleware, (req, res, next) => {
+    const offerId = req.params.offerId;
+
+    OfferController.markOfferAsRead(offerId)
+        .then(result => res.json(result))
         .catch(next);
 });

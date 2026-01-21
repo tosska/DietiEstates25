@@ -33,7 +33,6 @@ describe('GeoUtils.haversine [TypeScript Unit Tests]', () => {
 
         const result: number = Utils.haversine(miLat, miLon, rmLat, rmLon);
         
-        // Tolleranza di 1km per approssimazioni sferiche
         expect(result).toBeCloseTo(477, 0);
     });
 

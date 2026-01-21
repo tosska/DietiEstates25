@@ -12,6 +12,8 @@ export class OfferController {
     }
 
     static async createOffer(offerData, userId, role) {
+
+
         console.log(role);
         if (role === "customer") {
             let lastestOffer = OfferService.getLatestOfferForCustomerAndListing(offerData.customer_id, offerData.listing_id);
@@ -20,6 +22,15 @@ export class OfferController {
                 // Errore di logica: offerta già esistente (Bad Request)
                 throw createError("You already have a pending offer for this listing.", 400);
             }
+
+            if(!offerData.isRead) {
+                offerData.isRead=false;
+            }
+        } else if(role==="agent") {
+            
+            offerData.isRead=true;
+            
+            
         }
 
         let offer = Offer.build(offerData);
@@ -64,7 +75,8 @@ export class OfferController {
             throw createError('Invalid offer response. Must be "Accepted" or "Rejected"', 400);
         }
         
-        const [result] = await Offer.update({ status: offerResponse }, { where: { id: offer.id } });
+        
+        const [result] = await Offer.update({ status: offerResponse, isRead: false }, { where: { id: offer.id } });
 
         if (result === 0) {
             throw createError('Failed to update offer', 500);
@@ -78,7 +90,7 @@ export class OfferController {
         return result;
     }
 
-    static async createCounteroffer(offerId, counterOfferData, role) {
+    static async createCounteroffer(offerId, counterOfferData, role, userId) {
         console.log("Creating counteroffer for offer ID:", offerId);
         
         // La chiamata a respondToOffer gestirà internamente i createError se l'offerId non esiste o non è Pending
@@ -88,9 +100,10 @@ export class OfferController {
             counterOfferData.counteroffer = false;
         } else if (role === "agent") {
             counterOfferData.counteroffer = true;
+            counterOfferData.isRead = false;
         }
 
-        await this.createOffer(counterOfferData);
+        await this.createOffer(counterOfferData, userId, role);
     }
 
     static async getOfferHistoryForListingByAgent(listingId, userId) {
@@ -146,6 +159,34 @@ export class OfferController {
         return listingIds.map(offer => offer.listing_id);
     }
 
+ 
+    static async getLatestOfferReadStatus(listingIds) {
+        console.log(listingIds);
+        if (!listingIds || listingIds.length === 0) {
+            return [];
+        }
+
+        // Eseguiamo le query in parallelo per ogni listingId per massimizzare le performance
+        const statusPromises = listingIds.map(async (listingId) => {
+            const latestOffer = await Offer.findOne({
+                where: { listing_id: listingId },
+                order: [['offerDate', 'DESC']], // Ordina per data decrescente per prendere l'ultima
+                attributes: ['listing_id', 'isRead', 'id'] // Prendiamo solo i campi necessari
+            });
+
+            return {
+                listing_id: listingId,
+                // Se non ci sono offerte, restituiamo null, altrimenti lo stato isRead
+                isRead: latestOffer ? latestOffer.isRead : null, 
+                offerId: latestOffer ? latestOffer.id : null
+            };
+        });
+
+        const results = await Promise.all(statusPromises);
+        return results;
+    }
+
+
     static async getCountOfPendingOffersGroupListing(agentId) {
         return Offer.count({
             where: {
@@ -190,5 +231,20 @@ export class OfferController {
         }
 
         return offers;
+    }
+
+    static async markOfferAsRead(offerId) {
+        // Esegue l'update diretto sul database
+        const [updatedRows] = await Offer.update(
+            { isRead: true },
+            { where: { id: offerId } }
+        );
+
+        if (updatedRows === 0) {
+            // Se nessuna riga è stata aggiornata, l'ID non esiste
+            throw createError('Offer not found', 404);
+        }
+
+        return { success: true, message: "Offer marked as read", offerId };
     }
 }
