@@ -153,7 +153,8 @@ CREATE TABLE "Offers" (
     "externalName" VARCHAR(255),
     "customer_id" INTEGER NOT NULL,
     "agent_id" INTEGER NOT NULL,
-    "listing_id" INTEGER NOT NULL
+    "listing_id" INTEGER NOT NULL,
+    "isRead" BOOLEAN DEFAULT FALSE
 );
 
 -- ========================================================
