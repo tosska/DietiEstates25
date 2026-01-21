@@ -64,7 +64,7 @@ export class AuthController {
             where: { email: usr, providerId: payload.sub, providerName: providerName } 
         });
 
-        if (!credentials) return null;
+        if (!credentials) throw createError("Utente non trovato", 404);
 
         const businessId = await AuthService.getBusinessId(credentials.id, credentials.role);
         return { authId: credentials.id, userId: businessId, role: credentials.role };
