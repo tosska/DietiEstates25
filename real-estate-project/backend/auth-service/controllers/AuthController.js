@@ -7,6 +7,7 @@ import { AuthService } from '../services/AuthService.js';
 import { AgencyClient } from '../clients/AgencyClient.js';
 import { CustomerClient } from '../clients/CustomerClient.js';
 import { ProviderClient } from '../clients/ProviderClient.js';
+import {createError} from '../utils/errorUtils.js'
 
 export class AuthController {
     
@@ -53,6 +54,7 @@ export class AuthController {
 
     static async checkCredentialsFromSocial(req) {
         const { usr, providerToken, providerName } = req.body;
+        console.log("BODY OTTENUTO", req)
         if (!usr || !providerToken || !providerName) throw new Error('Dati social mancanti');
 
         const payload = await ProviderClient.validateSocialToken(providerName, providerToken);
@@ -104,10 +106,13 @@ export class AuthController {
 
         try {
             const payload = await ProviderClient.validateSocialToken(providerName, providerToken);
-            if (!payload || payload.email !== email) throw new Error('Token social non valido');
+            if (!payload || payload.email !== email) throw createError('Token social non valido', 400);
 
             const existing = await Credentials.findOne({ where: { email } });
-            if (existing) throw new Error('Email già registrata');
+            if (existing) throw createError('Email già registrata', 400);
+
+            const existingProviderId = await Credentials.findOne({where: {providerId: payload.sub}});
+            if (existingProviderId) throw createError("Utente già registrato", 400);
 
             newCredentials = await Credentials.create({
                 email, password: null, role: 'customer', providerName, providerId: payload.sub
