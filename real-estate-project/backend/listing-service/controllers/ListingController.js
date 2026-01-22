@@ -39,7 +39,7 @@ export class ListingController {
         console.log("Fetching listings for IDs:", req.body);
         const listings = await Listing.findAll({
             where: { id: listingIds },
-            include: [Address],
+            include: [Address, Photo, 'propertyType'],
         });
 
         return listings;

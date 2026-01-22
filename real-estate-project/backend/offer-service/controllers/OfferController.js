@@ -24,11 +24,11 @@ export class OfferController {
             }
 
             if(!offerData.isRead) {
-                offerData.isRead=false;
+                offerData.isRead=true;
             }
         } else if(role==="agent") {
             
-            offerData.isRead=true;
+            offerData.isRead=false;
             
             
         }
